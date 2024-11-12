@@ -1,0 +1,34 @@
+Обратный индекс — это структура данных, часто использующаяся в задачах полнотекстового поиска нужного документа в большой базе документов.
+По своей сути обратный индекс напоминает индекс в конце бумажных энциклопедий, где для каждого ключевого слова указан список страниц, где оно встречается.
+Т.е. это 
+ToLookup - аналог словаря, где под одним ключем (в данном случае слово) находится список элементов (в данном случае Id документов). 
+Под ключем- коллекция элементов (а не 1 элемент как в словаре).
+ToLookup напоминает группировку GroupBy - только в стиле СЛОВАРЯ
+ 
+
+Document[] documents =
+{
+  new Document {Id = 1, Text = "Hello world!"},
+  new Document {Id = 2, Text = "World, world, world... Just words..."},
+  new Document {Id = 3, Text = "Words — power"},
+  new Document {Id = 4, Text = ""}
+};
+var index = BuildInvertedIndex(documents);
+
+
+public static ILookup<string, int> BuildInvertedIndex(Document[] documents)
+{
+	return
+		documents
+		.SelectMany(doc =>
+					Regex.Split(doc.Text, @"\W+")
+					.Where(word => word != "")
+					.Select(word => Tuple.Create(word.ToLower(), doc.Id))
+					.Distinct()
+				   )
+		.ToLookup(
+		wd => wd.Item1,
+		wd => wd.Item2);
+}
+
+

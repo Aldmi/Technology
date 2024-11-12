@@ -1,0 +1,30 @@
+1. Войти в CI управления PG под именем User
+psql.exe -U postgres
+
+2.список БД
+\l
+
+3. Список юзеров
+\du
+
+4. Выход из CI psql
+\quit
+
+5. Удалить БД
+DROP DATABASE cis
+
+
+
+Удаление БД из контейнера
+
+1. Войти в контейнер 
+docker exec -it [idconteinerWithDb] bash
+
+2. Подключится к CI Postgreess
+psql -Uadipsend
+
+su postgres
+psql
+
+3. Удалить БД (БД не должен никто использовать)
+drop database adipsend;

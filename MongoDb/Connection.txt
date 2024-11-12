@@ -1,0 +1,18 @@
+Команда подключения к серверу MongoDb запущенному в docker контейнере.
+Например имя пользователя и пароль указываются в environment переменных docker-compose файла
+environment:
+  - MONGO_INITDB_ROOT_USERNAME=root
+  - MONGO_INITDB_ROOT_PASSWORD=pass12345
+
+
+1. запустим контейнер через docker-compose 
+docker-compose up -d
+
+2. выполним команду bash в запущенном контейнере, т.е. перейдем в командную строку внутри контейнера
+docker exec -it mongodb bash
+
+3. Выполним команду по подключению к MongoDb.
+mongo --port 27017 -u root -p pass12345
+
+4. Увидим информацию успешного подключения к shell MongoDb
+   MongoDB shell version v5.0.6

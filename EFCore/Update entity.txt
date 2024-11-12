@@ -1,0 +1,71 @@
+
+ОТКЛЮЧЕННОЕ ОБНОВЛЕНИЕ без Tracking ------------------------------------------------------------------------------------------------------------
+
+1. Update - т.к. сущность не отслеживается, непонятно что было изменено, поэтому Выставляет State= Modified во всех навигационных свойствах сущности
+            и все свойства помечаются e.Entry.Property("NAME").IsModified = true;
+			что генерирует не оптимальный SQL обновления.
+			
+			+ Простой способ обновить сущность в отключенном состоянии (NO TRACK)
+			- Если сущность с большим числом зависимостей - то обновление будет медленным.
+            
+2. Attach - Необходимо получить сущность ДО изменений, потом сделать Attach, и потом провести изменения.
+            Тогда изменения будут фиксироваться ChangeTracker.DetectChange().
+			И будет генерироваться оптимальный SQL только на нужные изменения.
+			
+			+ Работает ChangeTracker.DetectChange() как при нормальном отслеживаниии сущности после чтения
+			- необходимо передавать состояние ДО изменений и само изменение.
+
+3. TrackGraph - Альтернатива методу Update. Ручное выставление EntityState и IsModified для сущностей и их полей.
+                context.ChangeTracker.TrackGraph(bookDto, e =>
+                {
+                    e.Entry.State = EntityState.Unchanged;
+                    if (e.Entry.Entity is Review)
+                    {
+                        e.Entry.Property("VoterName").IsModified = true;
+                    }
+                });   
+				
+		    + Ручное управление позволяет для корня агрегации DDD выставить только нужные EntityState и IsModified, что позволет не только обновлять но и добавлять и удалять сущности.
+			- Ручное управление.
+			
+			
+P.S.
+При использовании DDD подхода - работать с целым агрегатом (Book, Reviews, BookAuthor) можно только через корень агрегации (Book)
+Через методы доступа, например, добавить Review и вызывать событие добавления.
+Переопределить вызове SaveChanges() из DbContext(), вызвать в нем обработчик событий домена.
+В этом обработчике есть доступ к контексту и в событии домена можно передать новый Review и любую информацию про агрегат.
+
++ В обработчике события есть доступ к DI - можно внедрять любые зависимости.
+  Можно обойти ограничение DDD - сначала загрузить все Reviews потом добавить новый.
+- Внедрять систему событий до вызова SaveChanges.
+
+public class Book]
+{
+  public void AddReviewViaEvents(int numStars, string comment, string voterName)
+  {
+	var reviewToAdd= new Review(numStars, comment, voterName, BookId);
+	AddEvent(new AddReviewEvent(reviewToAdd));
+  }
+}
+
+
+public class AddReviewEventHandler : IEventHandler<AddReviewEvent>
+{
+   private MeDbContext _context;
+   
+   public void HandleEvent(AddReviewEvent event)
+   {
+     _context.Add(event.reviewToAdd);
+   }
+}
+
+
+//При вызове метода SaveChanges события предметной области запускается до вызова базового метода SaveChanges
+public ovveride int SaveChanges()
+{
+	_eventRunner?.RunEvents(this);  //Или использовать Mediatr
+	
+	return base.SaveChanges();
+}
+
+

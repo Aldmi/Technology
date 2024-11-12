@@ -1,0 +1,25 @@
+1.В командной строке ввести команду подключения к серверу по TCP
+  telnet stackoverflow.com 80 - отправить на порт который использует браузер команду подключения.
+
+
+2. затем ввести http запрос:
+GET /questions HTTP/1.0
+Host: stackoverflow.com
+
+# add the 2 empty lines above but not this one
+
+
+3. 
+дождаться ответа
+
+
+$ telnet stackoverflow.com 80
+Trying 151.101.65.69...
+Connected to stackoverflow.com.
+Escape character is '^]'.
+GET /questions HTTP/1.0
+Host: stackoverflow.com
+
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+...

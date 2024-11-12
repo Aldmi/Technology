@@ -1,0 +1,139 @@
+
+*** Шаблон ТИПА
+ public static decimal CalculateToll(this Vehicle vehicle) => vehicle switch
+{
+    Car => 2.00m,
+    Truck => 7.50m,
+    null => throw new ArgumentNullException(nameof(vehicle)),
+    _ => throw new ArgumentException("Unknown type of a vehicle", nameof(vehicle)),
+};
+-------------------------------------------------------------------------------------------
+
+*** Шаблон констант
+public static decimal GetGroupTicketPrice(int visitorCount) => visitorCount switch
+{
+    1 => 12.0m,
+    2 => 20.0m,
+    3 => 27.0m,
+    4 => 32.0m,
+    0 => 0.0m,
+    _ => throw new ArgumentException($"Not supported number of visitors: {visitorCount}", nameof(visitorCount)),
+};
+
+if (input is null) //замена input == null
+{
+    // ...
+}
+if (input is not null)
+{
+    // ...
+}
+-------------------------------------------------------------------------------------------
+
+*** Реляционные шаблоны
+static string Classify(double measurement) => measurement switch
+{
+    < -4.0 => "Too low",
+    > 10.0 => "Too high",
+    double.NaN => "Unknown",
+    _ => "Acceptable",
+};
+static string GetCalendarSeason(DateTime date) => date.Month switch
+{
+    >= 3 and < 6 => "spring",
+    >= 6 and < 9 => "summer",
+    >= 9 and < 12 => "autumn",
+    12 or (>= 1 and < 3) => "winter",
+    _ => throw new ArgumentOutOfRangeException(nameof(date), $"Date with unexpected month: {date.Month}."),
+};
+//или перечислить через OR месяца в шаблоне
+static string GetCalendarSeason(DateTime date) => date.Month switch
+{
+    3 or 4 or 5 => "spring",
+    6 or 7 or 8 => "summer",
+    9 or 10 or 11 => "autumn",
+    12 or 1 or 2 => "winter",
+    _ => throw new ArgumentOutOfRangeException(nameof(date), $"Date with unexpected month: {date.Month}."),
+};
+
+static bool IsLetter(char c) => c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z');
+-------------------------------------------------------------------------------------------
+
+*** Шаблон свойства
+
+static bool IsConferenceDay(DateTime date) => date is { Year: 2020, Month: 5, Day: 19 or 20 or 21 };
+
+public record Point(int X, int Y);
+public record Segment(Point Start, Point End);
+static bool IsAnyEndAtOrigin(Segment segment) =>
+    segment is { Start: { X: 0, Y: 0 } } or { End: { X: 0, Y: 0 } };
+	
+	
+Таким образом можно сопоставить несколько входных значений с различными шаблонами, как показано в следующем примере:
+
+static decimal GetGroupTicketPriceDiscount(int groupSize, DateTime visitDate)
+    => (groupSize, visitDate.DayOfWeek) switch
+    {
+        (<= 0, _) => throw new ArgumentException("Group size must be positive."),
+        (_, DayOfWeek.Saturday or DayOfWeek.Sunday) => 0.0m,
+        (>= 5 and < 10, DayOfWeek.Monday) => 20.0m,
+        (>= 10, DayOfWeek.Monday) => 30.0m,
+        (>= 5 and < 10, _) => 12.0m,
+        (>= 10, _) => 15.0m,
+        _ => 0.0m,
+    };
+-------------------------------------------------------------------------------------------	
+	
+*** Шаблон пустой переменной	
+
+static decimal GetDiscountInPercent(DayOfWeek? dayOfWeek) => dayOfWeek switch
+{
+    DayOfWeek.Monday => 0.5m,
+    DayOfWeek.Tuesday => 12.5m,
+    DayOfWeek.Wednesday => 7.5m,
+    DayOfWeek.Thursday => 12.5m,
+    DayOfWeek.Friday => 5.0m,
+    DayOfWeek.Saturday => 2.5m,
+    DayOfWeek.Sunday => 2.0m,
+    _ => 0.0m,  //включая null, любое другое значение
+};
+
+//Для вычисления используем var, если хотим использовать переменную дальше.
+var numbers = new List<int> { 1, 2, 3 };
+if (SumAndCount(numbers) is (Sum: var sum, Count: > 0))
+{
+    Console.WriteLine($"Sum of [{string.Join(" ", numbers)}] is {sum}");  // output: Sum of [1 2 3] is 6
+}
+static (double Sum, int Count) SumAndCount(IEnumerable<int> numbers)
+{
+    int sum = 0;
+    int count = 0;
+    foreach (int number in numbers)
+    {
+        sum += number;
+        count++;
+    }
+    return (sum, count);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,38 @@
+*** Новое приложение Angular
+ng new AppName
+Новое приложение с модульной архитектурой
+ng new AppName --standalone=false
+
+*** Создать новый компонент
+ng g c --skip-tests=true component-name
+
+ng g c --standalone --inline-template --skip-tests=true component-name
+
+*** Создать директиву
+ng g d --skip-tests=true directives/dirName
+
+*** Создать пайп
+ng g p --skip-tests=true pipes/pipeName
+
+*** Создать сервис
+ng g s --skip-tests=true services/serviceName
+
+*** Создать модуль + компонент
+ng generate module CustomerDashboard
+ng generate component customer-dashboard/CustomerDashboard
+
+
+*** Изменить приложение на pwa. Добавить пакет @angular/pwa
+ng add @angular/pwa
+
+*** Сбилдить pwa приложение готовое к продакшену
+ng build --configuration production
+
+*** Установить глобально http-server для запуска pwa приложения
+npm install -g http-server
+
+*** Запуск сревера из папки с приложением pwa \dist\app-name
+http-server - p 8080
+
+*** Добавление папки environments
+g generate environments

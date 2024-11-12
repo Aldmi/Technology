@@ -1,0 +1,129 @@
+	var Text = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. ";
+	for (int i = 0; i < 10; i++) Text += Text;
+
+	using (var dstStream = new MemoryStream())
+	{
+		using (var writer = new StreamWriter(new GZipStream(dstStream, CompressionMode.Compress)))
+			writer.WriteLine(Text);
+
+		Console.WriteLine("Начальная длина - {0}", Text.Length);
+		var buffer = dstStream.GetBuffer();
+		Console.WriteLine("Длина после сжатия - {0}", buffer.Length);
+		for (int i = 0; i < 100; i++)
+			Console.Write((char)buffer[i]);
+
+		using (var reader = new StreamReader(new GZipStream(new MemoryStream(buffer), CompressionMode.Decompress)))
+		{
+			var line = reader.ReadLine();
+			Console.WriteLine(line == Text ? "OK" : "FAIL");
+		}
+	}
+	
+ЗАПИСЬ:	
+Писать будем в StreamWriter, который декорируется GZipStream для сжатия текста.
+GZipStream декорируется MemoryStream - т.е. пишет в ПАМЯТЬ (мог писать в FileStream).
+
+ЧТЕНИЕ:
+Для чтения текста нужен StreamReader, текст надо разархивировать через GZipStream.
+Источник для текста - это масив байт, ранее записанный StreamWriter-ом.
+Для чтение массива байт из памяти используем MemoryStream.
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+СВОЙ Stream (слой декоратора)
+Шифролвание по методу Цезаря.
+
+public class CaesarStream : Stream
+{
+    int shift;
+    Stream underlayingStream; //подлежащий Stream.
+    public CaesarStream(Stream underlayingStream, int shift)
+    {
+        this.underlayingStream = underlayingStream;
+        this.shift = shift;
+    }
+
+    //Пишем во внешний буффер buffer считанныую инфу. Для этого читаем из переданного Stream массив байт и шифруем его по методу Цезаря.
+    public override int Read(byte[] buffer, int offset, int count)
+    {
+        var read = underlayingStream.Read(buffer, offset, count);
+        for (int i = offset; i < offset + read; i++)
+            buffer[i] = (byte)((buffer[i] - shift + 256) % 256);
+        return read;
+    }
+
+    //читаем из внешенго буффера инфу. Шифруем ее. И пишем в переданный Stream.
+    public override void Write(byte[] buffer, int offset, int count)
+    {
+        var toWrite = new byte[count];
+        for (int i = offset; i < offset + count; i++)
+            toWrite[i - offset] = (byte)((buffer[i] + shift) % 256);
+        underlayingStream.Write(toWrite, offset, count);
+    }
+
+    #region Другие унаследованные методы
+    public override bool CanRead
+    {
+        get { return underlayingStream.CanRead; }
+    }
+
+    public override bool CanSeek
+    {
+        get { return underlayingStream.CanSeek; }
+    }
+
+    public override bool CanWrite
+    {
+        get { return underlayingStream.CanWrite; }
+    }
+
+    public override void Flush()
+    {
+        underlayingStream.Flush();
+    }
+
+    public override long Length
+    {
+        get { return underlayingStream.Length; }
+    }
+
+    public override long Position
+    {
+        get
+        {
+            return underlayingStream.Position;
+        }
+        set
+        {
+            underlayingStream.Position = value;
+        }
+    }
+
+    public override long Seek(long offset, SeekOrigin origin)
+    {
+        return underlayingStream.Seek(offset, origin);
+    }
+
+    public override void SetLength(long value)
+    {
+        underlayingStream.SetLength(value);
+    }
+    #endregion
+}
+
+class Program
+{
+    public static void Main()
+    {
+        var memoryStream = new MemoryStream();
+        var textWriter = new StreamWriter(new CaesarStream(memoryStream, 1));
+        textWriter.WriteLine("Hello, world!");
+        textWriter.Flush();
+
+        var buffer = memoryStream.GetBuffer();
+        for (int i = 0; i < memoryStream.Position; i++)
+            Console.Write((char)(buffer[i]));
+        Console.WriteLine();
+    }
+}

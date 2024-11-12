@@ -1,0 +1,1 @@
+jdbc:postgresql://localhost:5433/northwind?user=postgres&password=dmitr

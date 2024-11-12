@@ -1,0 +1,37 @@
+
+1. Выполнение параллельной обработки считанных из репозитория данных.
+   Fit - это чистая функция, поэтому не боимся выполнять ее параллельно.
+   Результат обработки сохраняется в сам объект account. Фиксируем изменений объектов в БД с помощью Commit.
+   Таким образом можно безопастно выяислить новое состояние объектов ПАРАЛЕЛЛЬНО.
+
+static void UpdatePredictionsPlinq(AccountRepository accounts)
+{            
+  accounts.AllAccounts  //Прочитали все аккаунты из БД и параллельно обработали. (НЕЛЬЗЯ ИСПОЛЬЗОВАТЬ accounts В ПАРАЛЛЕЛЬНОЙ ОБРАБОТКЕ - Т.К. dbContext не потокобезопасен.)
+  .AsParallel()
+  .ForAll(account =>
+  {
+    Trend trend = SampleUtilities.Fit(account.Balance);
+    double prediction = trend.Predict(account.Balance.Length + NumberOfMonths);
+    account.PlinqPrediction = prediction;
+    account.PlinqWarning = prediction < account.Overdraft;         
+   });
+
+   _uow.Commit();   
+}
+
+ПРИМЕЧАНИЕ:
+Если кол-во шагов велико (кол-во элементов в колеекции), а работа на каждом шаге простая, то возникает много накладных ресурсов на выделене параллельных потоков обработки.
+В таком случае нужно использовать Partitioner- этот объект делит всю последовательность на батчи. 
+Внутри каждого батча выполняется последовательная обработка элементов батча.
+
+int n = ...
+double[] result = new double[n];
+Parallel.ForEach(Partitioner.Create(0, n), 
+    (range) =>
+    {
+       for (int i = range.Item1; i < range.Item2; i++)
+       {
+         // very small, equally sized blocks of work
+         result[i] = (double)(i * i); 
+       }
+    });

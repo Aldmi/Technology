@@ -1,0 +1,62 @@
+<catel:DataWindow x:Class="STK_Lite.Views.MainWindow"
+                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                  xmlns:catel="http://catel.codeplex.com"
+                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                  xmlns:utils="clr-namespace:STK_Lite.Utils"
+                  xmlns:vartype="clr-namespace:STK_Lite.Models"
+                  xmlns:vm="clr-namespace:STK_Lite.ViewModels"
+                  Width="1000"
+                  Height="800"
+                  ResizeMode="CanResize"
+                  ShowInTaskbar="True"
+                  SizeToContent="Manual"
+                  WindowStartupLocation="Manual"
+                  WindowState="Normal"
+                  d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
+                  mc:Ignorable="d">
+
+    <!--  Resources  -->
+    <catel:DataWindow.Resources>
+
+        <utils:TreeConverter x:Key="TreeConverter" />       
+        <utils:NodeToListConverter x:Key="NodeToListConverter" />
+
+        <HierarchicalDataTemplate x:Key="TreeItemTemplate" DataType="{x:Type vartype:StartLevel}" ItemsSource="{Binding Path=VarLevel}">
+            <TextBlock Text="{Binding Path=Name}" />
+        </HierarchicalDataTemplate>
+
+        <Style x:Key="TreeItemStyle" TargetType="{x:Type TreeViewItem}">
+            <Setter Property="IsExpanded" Value="True" />
+            <!--<Style.Triggers>
+                <DataTrigger Binding="{Binding HasData}" Value="True">
+                    <Setter Property="Foreground" Value="DarkViolet" />
+                </DataTrigger>
+            </Style.Triggers>-->
+        </Style>
+
+    </catel:DataWindow.Resources>
+
+
+
+    
+    <!--  Content  -->
+    <Grid>
+        <TreeView Name="VarsTreeView"
+                  Width="253"
+                  Height="629"
+                  Margin="10,49,0,0"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Top"
+                  ItemsSource="{Binding Path=VarsDriver}">
+
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate DataType="{x:Type vartype:StartLevel}" ItemsSource="{Binding Path=VarLevel}">
+                    <TextBlock Text="{Binding Path=Name}" />
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
+        </TreeView>
+
+    </Grid>
+</catel:DataWindow>

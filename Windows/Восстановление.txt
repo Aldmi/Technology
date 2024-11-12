@@ -1,0 +1,7 @@
+В командную строку Администратора поочерёдно введите следующие команды и нажмите Enter:    
+
+1. Dism /Online /Cleanup-Image /CheckHealth 
+
+2. Dism /Online /Cleanup-Image /RestoreHealth  
+
+3. sfc /scannow    

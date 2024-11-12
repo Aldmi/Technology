@@ -1,0 +1,157 @@
+******************************************************************************************************
+ Локальные переменные
+------------------------------------------------------------------------------------------------------
+1.Для обращения в шаблоне к элементу
+<input #myInput />
+<button (click)="myInput.focus()">Focus</button>
+
+
+
+
+2.ViewChild decorator
+В коде компонента можно получить ссылку на элемент в шаблоне.	
+Значени будет доступно только полсе отрисовки компонента, т.е. ngOnInit еще не доступна переменная шаблона loginInput
+@Component({
+  selector: 'ns-login',
+  template: `<input #loginInput name="login"/>`,
+  standalone: true,
+  imports: [FormsModule]
+})
+export class LoginComponent implements AfterViewInit {
+  credentials = { login: '' };
+  
+  @ViewChild('loginInput') loginInput!: ElementRef<HTMLInputElement>;
+  
+  ngAfterViewInit(): void {
+	this.loginInput.nativeElement.focus();
+  }
+}
+
+_______________________________________________________________________________________________________
+можно этот функционал (установка фокуса на элементе) вынести в директиву
+@Directive({
+  selector: '[nsFocus]',
+  standalone: true
+})
+export class FocusDirective implements AfterViewInit {
+  constructor(private element: ElementRef<HTMLElement>) {}
+  
+  ngAfterViewInit(): void {
+	this.element.nativeElement.focus();
+  }
+}
+использование для элемента input
+<input nsFocus />
+________________________________________________________________________________________________________
+В декоратор ViewChild можно передавать тип (если объект этого типа один в шаблоне)
+
+@Component({
+  selector: 'ns-login',
+  template: `
+  <form (ngSubmit)="authenticate()">
+  <!-- ... -->
+  </form>
+  `,
+  standalone: true,
+  imports: [NgIf, FormsModule]
+})
+export class LoginFormComponent {
+  @ViewChild(NgForm) credentialsForm!: NgForm;
+  authenticate(): void {
+	console.log(this.credentialsForm.value);
+  }
+}
+
+________________________________________________________________________________________________________
+ViewChildren - Для получения списка элементов по типу
+Например в компоненте RaceComponent находится список PonyComponent
+@Component({
+  selector: 'ns-race',
+  templateUrl: './race.component.html',
+  standalone: true,
+  imports: [NgFor, PonyComponent]
+})
+export class RaceComponent implements AfterViewInit {
+  @Input({ required: true }) raceModel!: RaceModel;
+  @ViewChildren(PonyComponent) ponies!: QueryList<PonyComponent>;
+  
+  ngAfterViewInit(): void {
+	  this.ponies.changes
+	  // this will log how many ponies are displayed in the component
+		.subscribe((newList: QueryList<PonyComponent>) => console.log(newList.length));
+  }
+}
+
+
+
+
+
+3. ng-content - передать HTML дочернему компоненту.
+   компоненты пользовательского интерфейса, содержимое которых будет динамическим.
+   ng-content - это специальный тег, который вы можете использовать в своих шаблонах для включения HTML, предоставленного родительским компонентом:
+   Выбрать нужный ng-content можно по селектору
+<div class="card">
+  <div class="card-body">
+  <h4 class="card-title">
+	<ng-content select=".title"></ng-content>
+  </h4>
+  <p class="card-text">
+	<ng-content select=".content"></ng-content>
+  </p>
+</div>
+
+Использование:
+<ns-card>
+  <p class="title">Card <strong>title</strong></p>
+  <p class="content">Some quick <strong>example</strong> text</p>
+</ns-card>
+
+
+При использовании ng-content получить переенные шаблона через ViewChild или ViewChildren не получится
+нужно использовать ContentChild, ContentChildren
+
+
+Хотим отобразить вкладки используя разметку типа этой:
+<ns-tabs>
+  <ns-tab title="Races" />
+  <ns-tab title="About" />
+</ns-tabs>
+
+используем ContentChildren для получения списка TabDirective (или tab может быть компонентом)
+
+@Directive({
+  selector: 'app-tab',
+  standalone: true
+})
+export class TabDirective {
+  @Input() title = '';
+}
+
+
+@Component({
+  selector: 'app-tabs',
+  standalone: true,
+  imports: [
+    TabDirective,
+    NgForOf
+  ],
+  template: `
+    <h3>tabs component</h3>
+    <ul class="nav nav-tabs">
+      <li class="nav-item" *ngFor="let tab of tabs">
+        <a class="nav-link">{{ tab.title }}</a>
+      </li>
+    </ul>
+  `,
+  styleUrl: './tabs.component.scss'
+})
+export class TabsComponent {
+  @ContentChildren(TabDirective) tabs!: QueryList<TabDirective>;
+}
+
+3. ng-template и ngTemplateOutlet
+ng-content не подходит, если вы хотите вставить какое-либо динамическое HTML-содержимое в ваш шаблон
+
+
+
+

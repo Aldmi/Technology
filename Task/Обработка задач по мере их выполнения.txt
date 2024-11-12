@@ -1,0 +1,87 @@
+
+1. Решение в лоб. В цикле ждем завершение всех задач по 1, дожидаясь завершения задачи через Task.WhenAny.
+
+	while(tasks.Count > 0) 
+	{
+		var t = await Task.WhenAny(tasks);  //t - законченная первая задача.
+		tasks.Remove(t);
+		try
+		{
+			ProcessValue(await t);  //Обработка результата
+		}
+		catch(OperationCanceledException) {}
+		catch(Exception exc) 
+		{
+			//Handle(exc);
+		}
+	}
+	
+	Минусы - при больщом кол-ве задач много накладных ресусов.
+	
+	
+2.
+Альтернативный подход - создать новый метод «комбинатор», специально предназначенный для этой цели.
+При работе с коллекцией экземпляров Task <T> WhenAny возвращает Task <Task <T>>;\
+это задача, которая будет завершена, когда будет завершена первая поставленная задача,
+и результат Task <Task <T>> будет этой первой завершенной задачей. В нашем случае нам нужна не просто первая задача,
+а все задачи, упорядоченные в порядке их выполнения. Мы можем представить это с помощью Task <Task <T>> [].
+Подумайте об этом как о массиве сегментов, в которые мы будем помещать входные задачи по мере их завершения,
+по одной задаче на сегмент. Итак, если вы хотите, чтобы первая задача была завершена,
+вы можете дождаться первой корзины этого массива, а если вы хотите, чтобы шестая задача была завершена, вы можете дождаться шестой корзины этого массива.
+
+	public static Task<Task<T>>[] Interleaved<T>(IEnumerable<Task<T>> tasks)
+	{
+		var inputTasks = tasks.ToList();
+
+		var buckets = new TaskCompletionSource<Task<T>>[inputTasks.Count];
+		var results = new Task<Task<T>>[buckets.Length];
+		for (int i = 0; i < buckets.Length; i++) 
+		{
+			buckets[i] = new TaskCompletionSource<Task<T>>();
+			results[i] = buckets[i].Task;
+		}
+
+		int nextTaskIndex = -1;
+		Action<Task<T>> continuation = completed =>
+		{
+			var bucket = buckets[Interlocked.Increment(ref nextTaskIndex)];
+			bucket.TrySetResult(completed);
+		};
+
+		foreach (var inputTask in inputTasks)
+			inputTask.ContinueWith(continuation, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+
+		return results;
+	}
+
+    //легко использовать - просто перечисляем список задач, а они поступают в порядке выполнения а не по порядку списка.
+	foreach (var bucket in Interleaved(tasks)) 
+	{
+		var t = await bucket;
+		int result = await t;
+		Console.WriteLine("{0}: {1}", DateTime.Now, result);
+	}
+	
+	
+3. Обработка блокирующей операции по получению TCP клиентов, серовером.
+
+Listener.Accept()- блокирующая операция, ожидание нового TCP клиента на сокете.
+После получения клиента, обработка этого клиента отдается в новый Task, для контроля над тасками, поместим их в коллекцию.
+Поскольку есть блокирующая операция, то мы находимся в бесконечном цикле, и саму эту функцию можно тоже запускать на Task в вызывающем коде.
+
+CancellationTokenSource ctsStop = new ();
+List<Task> activeTasks = new (); 
+// также тут может быть HashSet, связный список или вовсе ConcurrentDictionary
+
+// …
+
+while (!ctsStop.IsCancellationRequested)
+{
+    var client = Listener.Accept();
+    var task = new Task.Run(()=> ClientThread(client, ctsStop.Token));
+
+    lock(activeTasks) activeTasks.Add(task);
+    task.ContinueWith(t => {
+         lock(activeTasks) activeTasks.Remove(t);
+    }, TaskContinuationOptions.ExecuteSynchronously);
+}	

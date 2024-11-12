@@ -1,0 +1,41 @@
+public class PositionOptions
+{
+    public const string OptionName = "Position";
+    
+    [Range(0, 100, ErrorMessage = "Value for {0} must be between {1} and {2}.")]
+    public int CoordinateX { get; set; }
+    
+    public string Name { get; set; }    
+}
+
+
+"appsetting.json"	
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+
+"Position":{
+   "CoordinateX": 10000,
+   "Name": "Posit1" 
+},
+  "AllowedHosts": "*"
+}
+
+
+
+//ПОЛУЧИТЬ НАСТРОЙКИ СРАЗУ (ДО РЕГИСТРАЦИИ В ioc)
+var positionOptions = builder.Configuration.GetSection(PositionOptions.OptionName)
+    .Get<PositionOptions>();
+
+//ЗАРЕГИСТРИРОВАТЬ НАСТРОЙКИ В ioc И ПОЛУЧАТЬ НАСТРОЙКИ В ОБЕРТКЕ IOptions<PositionOptions>
+builder.Services.AddOptions<PositionOptions>()
+    .Bind(builder.Configuration.GetSection(PositionOptions.OptionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+	
+
+	

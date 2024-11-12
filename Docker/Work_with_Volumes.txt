@@ -1,0 +1,17 @@
+Примонтировать 2 раздела:
+docker run -d -it -p 8080:80 -v ${PWD}/appsettings.json:/app/appsettings.json -v ${PWD}/Logs:/app/Logs dockertest
+
+Файл настрек appsettings.json (ДОЛЖЕН БЫТЬ СОЗДАН В ПАПКЕ ${PWD}/)
+-v ${PWD}/appsettings.json:/app/appsettings.json
+Папка Logs будет созданна автоматически
+-v ${PWD}/Logs:/app/Logs dockertest
+
+
+Лутчше монтировать папки, а не файлы, поэтому appsettings.json желательно поместить в контейнере в папку Settings/appsettings.json
+
+AppSetting = new ConfigurationBuilder()
+		.SetBasePath(currentPath)
+		.AddJsonFile("Settings/appsettings.json")
+		
+и тогда 
+-v ${PWD}/Settings:/app/Settings

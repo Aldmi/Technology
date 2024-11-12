@@ -1,0 +1,10 @@
+1.метод с параметрами
+	
+	public interface IIfoo
+	{
+		int Sum(int x1, int x2);
+	}			
+	var mock = new Mock<IIfoo>();
+	mock.Setup(uow => uow.Sum(It.IsAny<int>(), It.IsAny<int>())).Returns((int x1, int x2) => x1+x2);
+	var res = mock.Object.Sum(10, 25);
+	

@@ -1,0 +1,83 @@
+//1. Класс Издатель------------------------------------------------------------------------------------------------------
+using System.Reactive.Subjects;
+
+    public class SalesOrder
+    {
+        string _status;
+        public ISubject<StatusChange> StatChange { get; } = new Subject<StatusChange>(); //StatusChange - аргумент передаваемый в событии
+
+        public int Id { get; set; }
+
+        public string Status
+        {
+            get { return _status; }
+            set
+            {
+                _status = value;
+                var sc = new StatusChange() { OrderId = this.Id, OrderStatus = _status };
+                StatChange.OnNext(sc);                                                // вызов события
+
+                //StatChange.OnCompleted();                                           // отключение подписчиков на стороне издателя
+                //StatChange.OnError(new Exception("ошибка в обработке события"));    // генерация исключения на стороне издателя
+            }
+        }
+    }
+
+	public class StatusChange
+    {
+        public int OrderId { get; set; }
+        public string OrderStatus { get; set; }
+    }
+//---------------------------------------------------------------------------------------------------------------------------
+//2. Класс Подписчик (Наблюдатель)---------------------------------------------------------------------------------------------------------
+    public class Observer
+	{
+        public SalesOrder SalesOrder { get; set; }= new SalesOrder();
+		public IDisposable DispouseOrderStatusProcess { get; set; }
+        public IDisposable DispouseOrderStatusAcsess { get; set; }
+
+		public Observer()
+		{
+			//Подписка на событие. Возврашается объект IDisposable. Что позволяет отписываться от Лямбд.
+			//Используя лямбду можно фильтровать сработку события "Where((h)=> h.OrderStatus == "Processing")" на стороне Подписчика.
+			//В данном случае сработает обработчик (обработчики) если вызывающий код присвоит (SalesOrder.Status = "Processing")
+			DispouseOrderStatusProcess = SalesOrder.StatChange.Where((h)=> h.OrderStatus == "Processing").Subscribe(StatusChanged, OnError, OnCompleted);
+			
+			//Подписка одного обработчика (OnNext) с помошью лямбда выражения.
+            DispouseOrderStatusAcsess= SalesOrder.StatChange.Subscribe(change => MessageBox.Show("Subscribe 2"));
+		}
+		
+		
+		//Обработчики события.
+        public void StatusChanged(StatusChange status)                //вызовется если издатель вызовет StatChange.OnNext();  
+        {
+            MessageBox.Show(status.OrderStatus);
+        }
+        public void OnError(Exception ex)                             //вызовется если издатель вызовет StatChange.OnError();   
+        {
+            MessageBox.Show(ex.Message);
+        }
+        public void OnCompleted()                                     //вызовется если издатель вызовет StatChange.OnCompleted();    
+        {
+            MessageBox.Show("order processing completed");
+        }
+		
+		
+		
+		//Генерация события
+        public void NewWindow()
+        {
+            SalesOrder.Status = "Processing";
+			// В данном примере вызовется обработчик StatusChanged() и лямбда второй подписки (change => MessageBox.Show("Subscribe 2")
+        }
+		
+		
+		//Отписка от обработки события
+		public void ShowRedScreen()
+        {
+            DispouseOrderStatusAcsess.Dispose();
+        }
+	}
+	
+	
+	

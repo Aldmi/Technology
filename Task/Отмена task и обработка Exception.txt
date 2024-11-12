@@ -1,0 +1,54 @@
+Правильный шаблон отмены выглядит так:
+В цикле задачи переодически оправшиваем ct и выкидывем исключение при сработке токена, внутри Задачи это исключение не обрабатываем.
+Отлавливаем OperationCanceledException только в вызывающем коде.
+Статус задачи taskWork выставится в TaskStatus.Canceled и такой же статус будет у результирующей задачи resTask.
+
+ПРАВИЛО РЕАЗИЗАЦИИ ОТМЕНЫ:
+Чтобы гарантировать, что запущеная задача переходит в состояние Отменено, токен отмены должен быть передан в качестве аргумента методу StartNew,
+а необработанное исключение OperationCanceledException, содержащее тот же токен отмены, должно быть выброшено задачей.
+ЭТО ОБУСЛОВЛЕННО ТЕМ, ЧТО Task должен отличить заверешение задачи по ОТМЕНЕ от заверешения по Exception, поэтому при завершении задачи сравнивается токен из StartNew и токен пришедший из  Exception ThrowIfCancellationRequested.
+Если токены совпали, то это отмена (TaskStatus.Canceled), если просто вылетело исключение то это TaskStatus.Faulted.
+ОШИБКИ ОТМЕНЫ:
+ 1. не передали ct в StartNew - OperationCanceledException сработает, НО  Status == TaskStatus.Faulted.
+ 2. не оправшивать ct.ThrowIfCancellationRequested() - отмена не сработает вообще, задача успешно завершится со статусом  Status == TaskStatus.RunToCompletion.
+
+ПРАВИЛO ОБРАБОТКИ Exception:
+ При использовании await для ожидания задачи в которой возникло исключение (это касается и агрегированной задачи Task.WhenAll()),
+ задача завершается со Status == TaskStatus.Faulted и выбрасывается РОДНОЕ исключение (а не AggregateException),
+ что позволяет не тратит время на обработку внутрениих исключений в AggregateException.
+ Усторевший способ, использование Task.WaitAll(taskCanceled, taskWork) - в этом случае генерируется AggregateException.
+
+	var cts= new CancellationTokenSource();
+	var ct= cts.Token;
+	var taskCanceled= Task.Delay(2000).ContinueWith(_ => cts.Cancel());
+	var taskWork = Task.Factory.StartNew(() =>
+	{
+		for (int i = 0; i < 10; i++)
+		{
+			ct.ThrowIfCancellationRequested();
+			Thread.Sleep(500);
+			Console.WriteLine(i);
+		   // await Task.Delay(1000);
+		}
+   }, ct);
+	
+	try
+	{
+		var resTask= Task.WhenAll(taskCanceled, taskWork);
+		await resTask;
+		var expectedStatus= taskWork.Status == TaskStatus.Canceled;
+	}
+	catch (OperationCanceledException  e) 
+	{
+		Console.WriteLine(e.Message);
+	}
+	catch (Exception e) 
+	{
+		Console.WriteLine(e.Message);
+	}
+	finally
+    {
+        if (cts != null) cts.Dispose();
+    }
+	
+	

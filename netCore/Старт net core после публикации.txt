@@ -1,0 +1,5 @@
+1. запуск приложения с установкой environment переменной
+   dotnet WebApiSwc.dll --environment "Development"
+
+2. Установить для Windows environment переменную 
+   setx ASPNETCORE_ENVIRONMENT "Development"

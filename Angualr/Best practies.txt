@@ -1,0 +1,53 @@
+############################################################
+//замена Enum, создание типа объединений 
+
+enum Color {
+  blue = 'blue',
+  red = 'red',
+  green = 'green'
+}
+
+type Color = 'blue' | 'red' | 'green';
+const ponyColor: Color = 'blue';
+
+####################################################################################
+// Optional arguments
+function addPointsToScore(player: HasScore, points?: number): void {
+  points = points || 0;
+  player.score += points;
+  
+  
+#################################################################################
+// keyof - ограничение для ключа доступа к объекту 
+interface PonyModel {
+  name: string;
+  color: string;
+  speed: number;
+}
+
+const pony: PonyModel = {
+  name: 'Rainbow Dash',
+  color: 'blue',
+  speed: 45
+};
+
+//BAD - можно передать любое значение ключа, что приведет к ошибке
+function getProperty(obj: any, key: string): any {
+  return obj[key];
+}
+const nameValue = getProperty(pony, 'name111');
+
+
+//GOOD - использовние keyof. -  key теперь может быть только существующим свойством PonyMode
+type PonyModelKey = keyof PonyModel;
+let property: PonyModelKey = 'name';
+property = 'speed222'; //ERROR
+
+function getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {
+  return obj[key];
+}
+
+let h= getProperty(pony, 'color');
+
+
+

@@ -1,0 +1,44 @@
+//REGISTER----------------------------      
+   builder.RegisterType<KafkaProducer>().As<IProduser>().InstancePerDependency();
+
+
+//USING--------------------------------------------------------------------
+
+    public interface IProduser : IDisposable
+    {
+        Task<Message<Null, string>> ProduceAsync(string topic, string value, int partition = -1);
+    }
+
+	
+    public class KafkaProducer : IProduser
+    {
+        private readonly ProduserOption _option;
+        private readonly ILogger _logger;
+        private readonly Producer<Null, string> _producer;
+
+   
+        public KafkaProducer(ProduserOption option, ILogger logger)       //ILogger - зарегистрированн отдельно
+        {
+            _option = option;
+            _logger = logger;
+        }
+	}
+	
+	
+  public class Device<TIn> : IDisposable
+    {
+    //В ctor KafkaProducer нужно передовать ProduserOption, поэтому для динамического создания IProduser нужно использовать фабрику Func
+	//Чтобы контролировать вермя жизни созданного экземпляра используем Owned<T>
+	  public Device( Func<ProduserOption, Owned<IProduser>> produser4DeviceRespFactory,
+					 ProduserOption produser4DeviceOption)
+		{          
+			var produserOwner = produser4DeviceRespFactory(produser4DeviceOption);
+			_produserOwner = produserOwner;                  //можно создать/удалить produser в любое время используя фабрику и Owner 
+			_produser = produserOwner.Value;
+		}
+		
+		public void Dispose()
+		{
+		   _produserOwner.Dispose();
+		}
+	}

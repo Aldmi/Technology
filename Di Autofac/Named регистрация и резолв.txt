@@ -1,0 +1,40 @@
+
+Сервис InlineInseartService регистрируем под именем "ByRules"
+	const string replacePattern = @"\{\$[^{}:$]+\}";
+	builder.RegisterType<InlineInseartService>()
+		.AsSelf()
+		.Named<InlineInseartService>("ByRules")
+		.InstancePerDependency();
+		
+		
+		
+РЕЗОЛВ
+
+ 1. Если надо динамически резолвить разные сревисы
+ 
+	public class Modem : IHardwareDevice
+	{
+	  IIndex<DeviceState, IDeviceState> _states;
+	  IDeviceState _currentState;
+
+	  public Modem(IIndex<DeviceState, IDeviceState> states)
+	  {
+		 _states = states;
+		 SwitchOn();
+	  }
+
+	  void SwitchOn()
+	  {
+		 _currentState = _states[DeviceState.Online];  //Можно динамически резолвить разные варианты сервиса по имени или ключу.
+		
+	  }
+    }
+	
+	
+ 2. Статически резолв в конструкторе
+ 
+public class ArtDisplay
+{
+  public ArtDisplay([KeyFilter("Painting")] IArtwork art)  //KeyFilter аттрибут с указанием имени регистрации.
+  { ... }
+}

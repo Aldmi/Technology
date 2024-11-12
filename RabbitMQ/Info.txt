@@ -1,0 +1,13 @@
+Management Client:
+http://localhost:15672/
+
+Сервер:
+http://localhost:5672/
+
+Описание:
+http://localhost:15672/api/index.html
+
+
+Логин и пароль по умолчанию
+Login:guest
+Password:guest

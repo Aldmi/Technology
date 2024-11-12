@@ -1,0 +1,44 @@
+
+private BlockingCollection<Task<Result>> _httpContextTasks= new BlockingCollection<Task<Result>>(50); //ограничить до 50 поступление данных Продюссером.
+
+public void StartListen()
+{
+	_cts =  new CancellationTokenSource();
+	_listener.Start();
+	_bgTask = BackgroundController4ContextHandlers(_cts.Token);
+	_listenTask= ListenHttpAsync(_cts.Token);
+}
+        
+/// <summary>
+/// контроль за задачей обработки запроса.
+/// По завершениию обработки удалить задачу из очереди.
+/// </summary>
+private  Task BackgroundController4ContextHandlers(CancellationToken ct)
+{
+   return Task.Run(async () =>
+	{
+		foreach (var task in _httpContextTasks.GetConsumingEnumerable())
+		{
+			var res = await task;
+			var strResult = res.ToString();
+			_logger.Error("{HttpServer}","ЗАПРОС ОБРАБОТАН >>>>>>>>>>>>>>>>>>>", strResult);
+		}
+		_logger.Information("{HttpServer}","ФОНОВАЯ обработка запросов остановленна");
+	}, ct);
+}
+
+//Добавить задачу в коллекцию
+private async Task ListenHttpAsync(CancellationToken ct)
+{
+	_logger.Information("{HttpServer}", "Ожидание запросов ...");
+	while (true)
+	{
+		try
+		{
+			var context = await _listener.GetContextAsync();
+			var handler = HttpListenerContextHandlerAsync(context, ct);
+			_httpContextTasks.Add(handler);
+		}
+		catch (CanceledException ex){}
+	}
+}

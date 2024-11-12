@@ -1,0 +1,98 @@
+Enables these commonly used commands:
+Add-Migration
+Bundle-Migration
+Drop-Database
+Get-DbContext
+Get-Migration
+Optimize-DbContext
+Remove-Migration
+Scaffold-DbContext
+Script-Migration
+Update-Database
+
+
+1. Конструктор Контекста по умолчанию выполняет миграцию (т.е. если БД не созданна то по всем миграциям из папки Migrations создается БД) 
+
+public Context(string connStr, HowCreateDb howCreateDb = HowCreateDb.Migrate )
+{
+	_connStr = connStr;
+	ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;//Отключение Tracking для всего контекста
+	switch (howCreateDb)
+	{
+		case HowCreateDb.Migrate:
+			Database.Migrate();       //Если БД нет, то создать по схемам МИГРАЦИИ.
+			break;
+		case HowCreateDb.EnsureCreated:
+			Database.EnsureCreated(); //Если БД нет, то создать. (ОТКЛЮЧАТЬ ПРИ МИГРАЦИИ)
+			break;
+	}
+}
+		
+		
+2. Миграции лутчше делать из отдельной консоли на проекте "DAL.EFCore", Это исключает запуск основного проекта (если он выбран как стартовый).	
+	
+*** Получить список миграций
+PS D:\Git\CWS\src\DAL.EFCore> dotnet ef migrations list	
+
+*** Создать миграцию
+PS D:\Git\CWS\src\DAL.EFCore> dotnet ef migrations add InitialCreate
+                              dotnet ef migrations add InitialCreate -Project DBRepository - с указанием проекта, где будет созданна папка Migration
+
+*** Обновить БД
+PS D:\Git\CWS\src\DAL.EFCore> dotnet ef database update
+
+*** Удалить миграцию
+PS D:\Git\CWS\src\DAL.EFCore> dotnet ef migrations remove
+
+*** Откат к конкретной миграции в БД
+PS D:\Git\CWS\src\DAL.EFCore> dotnet ef database update LastGoodMigration
+
+*** вывод информации про DbContext
+PS D:\Git\CWS\src\DAL.EFCore> dotnet ef dbcontext info --context SeedExampleDbContext 
+
+Создание SQL скрипта миграции------------------------------------------------------------------------------
+3. Создание скрипта миграций для БД
+  4.1 выводит в консоль SQL скрипт
+      dotnet ef migrations script
+  4.2 Создать скрипт ВСЕХ миграций и записать его в файл "script.sql"
+      dotnet ef migrations script | out-file ./script.sql
+      
+  4.3 Создать скрипт ВСЕХ миграций ПОСЛЕ миграции 20190117151533_InitialCreate и записать его в файл "script.sql"
+      dotnet ef migrations script 20190117151533_InitialCreate | out-file ./script3.sql
+      
+  4.4 Создать скрипт ОДНОЙ миграций по имени 20190117151533_InitialCreate и записать его в файл "script.sql"
+      dotnet ef migrations script 0 20190117151533_InitialCreate | out-file ./script3.sql	  
+	  
+Созданный скрипт применяется к бд.
+
+
+
+4.Тестирование миграций с автономным DbContext--------------------------------------------------------------
+1. В консоли запустить проект (с тестами) где находится DbContext
+2. DbContext из проекта с тестами не может быть создан автоматически необходимо реализовать фабрику контекстов IDesignTimeDbContextFactory.
+   Это необходимо только для этапа создания миграций
+3. выполнить команду в консоли
+dotnet ef migrations add InitialCreate --context SeedExampleDbContext --output-dir Ch_9_Migration/Migrations
+
+
+
+
+
+
+CLI efCore Tool------------------------------------------------------------------------------------
+Версия ef:
+dotnet ef --version
+ 
+Установить заданную версию:
+dotnet tool update --global dotnet-ef --version 3.1.0
+
+Установить последнюю версию:
+dotnet tool update --global dotnet-ef
+
+
+Для выполнения команды нужно находится в корне проекта (и указывать относительный путь для --project и --startup-project)
+dotnet ef migrations list --project Infrastructure.Persistence.Pg --context ApplicationDbContext --startup-project WebUi
+
+
+	  
+	  

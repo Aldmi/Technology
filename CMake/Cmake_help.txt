@@ -1,0 +1,147 @@
+
+RedHat
+GCC --version
+4.8.5
+
+pkg-config --version
+0.27.1
+
+pkg-config --libs rdkafka++
+-lrdkafka++
+
+Список компиляторов
+$ dpkg --list | grep compiler
+
+
+
+*** Linux install
+
+cmake install
+$ sudo apt update -y
+$ sudo apt install cmake -y
+$ cmake --version
+cmake version 3.25.1
+
+ninja install
+$ sudo apt-get install ninja-build
+$ ninja --version
+1.11.1
+
+*** Вывести все возможные генераторы
+cmake --help
+
+*** генерация из папки Build
+D:\C++\Cmake_test1\build> cmake ..
+
+*** Сборка проекта
+D:\C++\Cmake_test1\build> cmake --build . --config Release
+
+
+
+
+"C:\Program Files\JetBrains\CLion 2023.2.2\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=C:/Program Files/JetBrains/CLion 2023.2.2/bin/ninja/win/x64/ninja.exe" -G Ninja -S D:\C++\TestCmake -B D:\C++\TestCmake\cmake-build-debug-mingw
+
+
+ 
+ 
+ Windows ----------------------------------------------------
+ Запускать из консоли (не PowerShell)
+ 1. Generate
+ "C:\Program Files\JetBrains\CLion 2023.2.2\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_MAKE_PROGRAM=C:/Program Files/JetBrains/CLion 2023.2.2/bin/ninja/win/x64/ninja.exe" -G Ninja -S D:\C++\Cmake_test1 -B D:\C++\Cmake_test1\cmake-build-debug-mingw
+ 
+ 
+ cmake -DCMAKE_BUILD_TYPE=Release "-DCMAKE_MAKE_PROGRAM=../ninja.exe" -G Ninja -S ../
+ 
+ cmake -DCMAKE_BUILD_TYPE=Release "-DCMAKE_MAKE_PROGRAM=../ninja.exe" -G Ninja -S D:\C++\Cmake_test2 -B D:\C++\Cmake_test2\cmake-build-release-mingw
+ 
+ cmake -DCMAKE_BUILD_TYPE=Release "-DCMAKE_MAKE_PROGRAM=C:/Program Files/JetBrains/CLion 2023.2.2/bin/ninja/win/x64/ninja.exe" -G Ninja -S D:\C++\Cmake_test2 -B D:\C++\Cmake_test2\cmake-build-release-mingw
+ 
+ cmake -DCMAKE_BUILD_TYPE=Release "-DCMAKE_MAKE_PROGRAM=C:/tmp/ninja.exe" -G Ninja -S D:\C++\Cmake_test2 -B D:\C++\Cmake_test2\cmake-build-release-mingw
+ 
+ DCMAKE_MAKE_PROGRAM - необходимо установить абсолютный путь
+ cmake -DCMAKE_BUILD_TYPE=Release "-DCMAKE_MAKE_PROGRAM=D:/C++/Cmake_test2/ninja.exe" -G Ninja -S D:\C++\Cmake_test2 -B D:\C++\Cmake_test2\cmake-build-release-mingw
+ 
+ 
+ 
+ 2. Build
+ "C:\Program Files\JetBrains\CLion 2023.2.2\bin\cmake\win\x64\bin\cmake.exe" --build D:\C++\Cmake_test1\cmake-build-debug-mingw --target Cmake_test1 -j 14
+ 
+ cmake --build D:\C++\Cmake_test2\cmake-build-release-mingw --target Cmake_test2 -j 14
+ 
+ 
+ 
+ 
+Linux----------
+ 1. Generate
+/opt/clion-2023.2.2/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/opt/clion-2023.2.2/bin/ninja/linux/x64/ninja -G Ninja -S /home/aldmi/CLionProjects/GidUralClient -B /home/aldmi/CLionProjects/GidUralClient/cmake-build-debug
+
+cmake -DCMAKE_BUILD_TYPE=Debug -G Ninja -S /home/aldmi/CLionProjects/Cmake_test2 -B /home/aldmi/CLionProjects/Cmake_test2/cmake-build-debug
+
+
+2. Build
+/opt/clion-2023.2.2/bin/cmake/linux/x64/bin/cmake --build /home/aldmi/CLionProjects/GidUralClient/cmake-build-debug --target GidUralClient -j 14
+
+cmake --build /home/aldmi/CLionProjects/Cmake_test2/cmake-build-debug --target Cmake_test2 -j 14
+
+
+
+Linux------------------------------
+GidUralClient Debian local
+
+cmake -DCMAKE_BUILD_TYPE=Release -G Ninja -S /home/aldmi/CLionProjects/GidUralClient_test -B /home/aldmi/CLionProjects/GidUralClient_test/cmake-release-debug
+
+cmake --build /home/aldmi/CLionProjects/GidUralClient_test/cmake-release-debug --target GidUralClient -j 14
+
+
+
+
+
+Linux------------------------------
+GidUralClient RedHat 10.0.0.236 
+
+***install cmake version 3.x
+sudo yum -y install cmake3
+
+cmake3 -DCMAKE_BUILD_TYPE=Release -G Ninja -S /root/gid/GidUralClient -B /root/gid/GidUralClient/cmake-release
+
+cmake3 --build /root/gid/GidUralClient/cmake-release --target GidUralClient -j 14
+
+
+TcpIpClent_Simple RedHat 10.0.0.236 
+
+cmake3 -DCMAKE_BUILD_TYPE=Release -G Ninja -S /root/TcpClient_Simple -B /root/TcpClient_Simple/cmake-release
+
+cmake3 --build /root/TcpClient_Simple/cmake-release --target TcpClient_Simple -j 14
+
+Запись потока терминала в файл
+./TcpClient_Simple | tee log.txt
+
+
+
+JsonSerializer RedHat 10.0.0.236 
+
+cmake3 -DCMAKE_BUILD_TYPE=Release -G Ninja -S /root/JsonSerializer -B /root/JsonSerializer/cmake-release
+
+cmake3 --build /root/JsonSerializer/cmake-release --target JsonSerializer -j 14
+
+
+
+Kafka RedHat 10.0.0.236 
+
+cmake3 -DCMAKE_BUILD_TYPE=Release -G Ninja -S /root/kafka_Test -B /root/kafka_Test/cmake-release
+
+cmake3 --build /root/kafka_Test/cmake-release --target kafka_Test -j 14
+
+/root/kafka_Test
+
+
+
+
+
+
+
+
+
+
+
+ 

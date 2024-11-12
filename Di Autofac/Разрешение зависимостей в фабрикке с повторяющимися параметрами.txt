@@ -1,0 +1,42 @@
+//REGISTER----------------------------      
+            public delegate LogForm FactoryLogFormDelegate(Station station1, Station station2);
+		   
+		    builder.RegisterType<Form1>().InstancePerDependency();
+            builder.RegisterType<LogForm>();
+            builder.RegisterGeneratedFactory<FactoryLogFormDelegate>(new TypedService(typeof(LogForm)));//Делегат для создания LogForm (в конструкоре LogForm должен быть этот делегат)
+			
+			
+			
+//USING---------------------------
+	public partial class Form1 : Form
+    {
+        private readonly AutofacConfig.FactoryLogFormDelegate _logFormFactory;
+
+        public Form1(AutofacConfig.FactoryLogFormDelegate logFormFactory)
+        {
+            _logFormFactory = logFormFactory;
+            InitializeComponent();
+        }
+
+        private void btn_OpenForm_Click(object sender, EventArgs e)
+        {
+            var station1= new Station();
+            var station2 = new Station();
+            var form = _logFormFactory(station1, station2);
+            form.ShowDialog();
+        }
+    }
+		
+	public partial class LogForm : Form
+    {
+        private readonly Station _station;
+        private readonly Station _station2;
+
+        public LogForm(Station station1, Station station2)  //повторяющиеся типы параметров, нужно разрешать через явно заданый делегат фабрики.
+        {
+            _station = station1;
+            _station2 = station2;
+
+            InitializeComponent();
+        }
+	}

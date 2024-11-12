@@ -1,0 +1,437 @@
+
+КРАТКОЕ ОПИСАНИЕ:
+Кол-во партиций в топике определяется при создании брокера.
+KAFKA_NUM_PARTITIONS: 2
+
+
+Продюсер по умолчанию пишет в топик без указания партиции
+var dr = await build.ProduceAsync("test-topic", new Message<Null, string> {Value=$"Task 1 {DateTime.Now:T}" });
+
+/////////////////////////////////////////
+Если в топике 1 партиция
+Несколько продюссеров пишут в ТОПИК => запись идет в одну партицию
+Если читает консьюмер группа с несколькими консьюмерами то читать будет только 1 консьюмер (т.к. одна партиция)
+Если читают консьюмеры из разных групп то всем консьюмерам будет приходить одна инфа (PUB-SUB)
+
+///////////////////////////////////////////
+Если в топике 2 партиции (по аналогии может быть больше)
+Несколько продюссеров пишут в ТОПИК => запись балансируется кафкой по разным партициям.
+При записи можно указать партицию для записи
+var topicPart = new TopicPartition("test-topic", new Partition(0)); 
+var dr = await build.ProduceAsync(topicPart, new Message<Null, string> {Value=$"Task 2 {DateTime.Now:T}" });
+
+Такой же эффект будет если писать с одинаковым ключем нескольким продюссерам (для сохранения порядка записей)
+Такой подход лутчше чем явно указывать партицию, т.к. кафка сама в зависимости от ключа выбирает партицию и балансирует нагрузку.
+var dr = await build.ProduceAsync("test-topic", new Message<int, string> { Key = 1, Value=$"Task 1 {DateTime.Now:T}" });
+
+Если читает консьюмер группа с несколькими консьюмерами, то будет работать только 2 консьюмера из группы.
+Если читают консьюмеры из разных групп то всем консьюмерам будет приходить одна инфа (PUB-SUB)
+
+///////////////////////////////////////////
+
+
+
+
+
+ПРИМЕР:
+**********************************************************************************************************
+
+Создаем Брокера с настройкой 2 партиции в новом топике.
+
+   environment:
+      KAFKA_NUM_PARTITIONS: 2
+	  
+	
+Producer-Consumer (Издатель-Потребитель)***************************************************************
+Консьюмеры должны паралельно обрабатывать данные из топика.	
+3 Продюсера пишут в топик без указанаия номера партиции (сообщение без ключа)
+3 Консьюмера читают из топика из одной partition-group
+
+Producer:
+
+var producerTask1=Task.Run(async () =>
+{
+    var config = new ProducerConfig
+    {
+        BootstrapServers = "localhost:29092",
+        AllowAutoCreateTopics = true,
+    };
+    
+    using var build = new ProducerBuilder<Null, string>(config).Build();
+    Console.WriteLine("1 Producer start>>>>>>>>>>>");
+    try
+    {
+        for (int i = 0; i < 100; i++)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(1));
+            var topicPart = new TopicPartition("test-topic", new Partition(0)); 
+            //var dr = await build.ProduceAsync(topicPart, new Message<Null, string> {Value=$"Task 1 {DateTime.Now:T}" });
+            var dr = await build.ProduceAsync("test-topic", new Message<Null, string> {Value=$"Task 1 {DateTime.Now:T}" });
+            Console.WriteLine($"1 Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'");
+        }
+    }
+    catch (ProduceException<string, string> e)
+    {
+        Console.WriteLine($"1 Delivery failed: {e.Error.Reason}");
+    }
+});
+
+var producerTask2= Task.Run(async () =>
+{
+    var config = new ProducerConfig
+    {
+        BootstrapServers = "localhost:29092",
+        AllowAutoCreateTopics = true
+    };
+    
+    using var build = new ProducerBuilder<Null, string>(config).Build();
+    Console.WriteLine("2 Producer start>>>>>>>>>>>");
+    try
+    {
+        for (int i = 0; i < 100; i++)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(1));
+            var topicPart = new TopicPartition("test-topic", new Partition(0)); 
+            //var dr = await build.ProduceAsync(topicPart, new Message<Null, string> {Value=$"Task 2 {DateTime.Now:T}" });
+            var dr = await build.ProduceAsync("test-topic", new Message<Null, string> {Value=$"Task 2 {DateTime.Now:T}" });
+            Console.WriteLine($"2 Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'");
+        }
+    }
+    catch (ProduceException<string, string> e)
+    {
+        Console.WriteLine($"2 Delivery failed: {e.Error.Reason}");
+    }
+});
+
+
+var producerTask3= Task.Run(async () =>
+{
+    var config = new ProducerConfig
+    {
+        BootstrapServers = "localhost:29092",
+        AllowAutoCreateTopics = true
+    };
+    
+    using var build = new ProducerBuilder<Null, string>(config).Build();
+    Console.WriteLine("3 Producer start>>>>>>>>>>>");
+    try
+    {
+        for (int i = 0; i < 100; i++)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(1));
+            var topicPart = new TopicPartition("test-topic", new Partition(0)); 
+            //var dr = await build.ProduceAsync(topicPart, new Message<Null, string> {Value=$"Task 3 {DateTime.Now:T}" });
+            var dr = await build.ProduceAsync("test-topic", new Message<Null, string> {Value=$"Task 3 {DateTime.Now:T}" });
+            Console.WriteLine($"3 Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'");
+        }
+    }
+    catch (ProduceException<string, string> e)
+    {
+        Console.WriteLine($"2 Delivery failed: {e.Error.Reason}");
+    }
+});
+
+await Task.WhenAll(producerTask1, producerTask2, producerTask3);
+
+
+
+
+OUTPUT:
+1 Producer start>>>>>>>>>>>
+2 Producer start>>>>>>>>>>>
+3 Producer start>>>>>>>>>>>
+1 Delivered 'Task 1 17:10:35' to 'test-topic [[1]] @2'
+3 Delivered 'Task 3 17:10:35' to 'test-topic [[1]] @1'
+2 Delivered 'Task 2 17:10:35' to 'test-topic [[1]] @0'
+1 Delivered 'Task 1 17:10:38' to 'test-topic [[0]] @0'
+2 Delivered 'Task 2 17:10:38' to 'test-topic [[1]] @4'
+3 Delivered 'Task 3 17:10:38' to 'test-topic [[1]] @3'
+3 Delivered 'Task 3 17:10:39' to 'test-topic [[0]] @1'
+2 Delivered 'Task 2 17:10:39' to 'test-topic [[1]] @5'
+1 Delivered 'Task 1 17:10:39' to 'test-topic [[1]] @6'
+2 Delivered 'Task 2 17:10:40' to 'test-topic [[0]] @3'
+1 Delivered 'Task 1 17:10:40' to 'test-topic [[0]] @2'
+3 Delivered 'Task 3 17:10:40' to 'test-topic [[1]] @7'
+3 Delivered 'Task 3 17:10:41' to 'test-topic [[0]] @4'
+2 Delivered 'Task 2 17:10:41' to 'test-topic [[1]] @8'
+1 Delivered 'Task 1 17:10:41' to 'test-topic [[0]] @5'
+3 Delivered 'Task 3 17:10:42' to 'test-topic [[1]] @10'
+
+
+kafka сама распределяет по партициям.
+доступно 2 партиции а продюссеров 3.
+Для сохранения порядка сообщений при обработке консьюмером, необходимо задать Key для каждого сообщения.
+Сообщения с одинаковым key попадаю всегда в одну партицию тем самым гарантируя последовательность записи друг за другом.
+---------------------------------------------------------------------------------------------------------
+
+
+Consumer
+
+var consumerTask1 = Task.Run(async () =>
+{
+    var conf = new ConsumerConfig
+    { 
+        GroupId = "test-consumer-group",
+        BootstrapServers = "localhost:29092",
+        AutoOffsetReset = AutoOffsetReset.Latest,
+        AllowAutoCreateTopics = true
+    };
+    
+    using var consumer = new ConsumerBuilder<Ignore, string>(conf).Build();
+    consumer.Subscribe("test-topic");
+    
+    Console.WriteLine("1 Consumer start>>>>>>>>>>>");
+    try
+    {
+        while (true)
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
+                //Блокировка.
+                var cr = consumer.Consume(CancellationToken.None); 
+                Console.WriteLine($"1 Consumed message '{cr.Value}'  '{cr.Key}' at: '{cr.TopicPartitionOffset}'.");
+            }
+            catch (ConsumeException e)
+            {
+                Console.WriteLine($"1 Error occured: {e.Error.Reason}");
+            }
+        }
+    }
+    catch (OperationCanceledException)
+    {
+        consumer.Close();
+    }
+});
+
+var consumerTask2 = Task.Run(async () =>
+{
+    var conf = new ConsumerConfig
+    { 
+        GroupId = "test-consumer-group",
+        BootstrapServers = "localhost:29092",
+        AutoOffsetReset = AutoOffsetReset.Latest,
+        AllowAutoCreateTopics = true,
+    };
+    
+    using var consumer = new ConsumerBuilder<Ignore, string>(conf).Build();
+    consumer.Subscribe("test-topic");
+    
+    Console.WriteLine("2 Consumer start>>>>>>>>>>>");
+    try
+    {
+        while (true)
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
+                //Блокировка.
+                var cr = consumer.Consume(CancellationToken.None); 
+                Console.WriteLine($"2 Consumed message '{cr.Value}'  '{cr.Key}' at: '{cr.TopicPartitionOffset}'.");
+            }
+            catch (ConsumeException e)
+            {
+                Console.WriteLine($"2 Error occured: {e.Error.Reason}");
+            }
+        }
+    }
+    catch (OperationCanceledException)
+    {
+        consumer.Close();
+    }
+});
+
+
+var consumerTask3 = Task.Run(async () =>
+{
+    var conf = new ConsumerConfig
+    { 
+        GroupId = "test-consumer-group",
+        BootstrapServers = "localhost:29092",
+        AutoOffsetReset = AutoOffsetReset.Latest,
+        AllowAutoCreateTopics = true
+    };
+    
+    using var consumer = new ConsumerBuilder<Ignore, string>(conf).Build();
+    consumer.Subscribe("test-topic");
+    
+    Console.WriteLine("3 Consumer start>>>>>>>>>>>");
+    try
+    {
+        while (true)
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1), CancellationToken.None);
+                //Блокировка.
+                var cr = consumer.Consume(CancellationToken.None); 
+                Console.WriteLine($"3 Consumed message '{cr.Value}'  '{cr.Key}' at: '{cr.TopicPartitionOffset}'.");
+            }
+            catch (ConsumeException e)
+            {
+                Console.WriteLine($"3 Error occured: {e.Error.Reason}");
+            }
+        }
+    }
+    catch (OperationCanceledException)
+    {
+        consumer.Close();
+    }
+});
+
+
+await Task.WhenAll(consumerTask1, consumerTask2, consumerTask3);
+
+
+OUTPUT:
+1 Consumer start>>>>>>>>>>>
+3 Consumer start>>>>>>>>>>>
+2 Consumer start>>>>>>>>>>>
+1 Consumed message 'Task 1 17:12:17'  '' at: 'test-topic [[0]] @51'.
+3 Consumed message 'Task 3 17:12:17'  '' at: 'test-topic [[1]] @69'.
+1 Consumed message 'Task 2 17:12:17'  '' at: 'test-topic [[0]] @52'.
+1 Consumed message 'Task 1 17:12:18'  '' at: 'test-topic [[0]] @53'.
+3 Consumed message 'Task 3 17:12:19'  '' at: 'test-topic [[1]] @70'.
+1 Consumed message 'Task 3 17:12:18'  '' at: 'test-topic [[0]] @54'.
+3 Consumed message 'Task 1 17:12:19'  '' at: 'test-topic [[1]] @71'.
+1 Consumed message 'Task 2 17:12:18'  '' at: 'test-topic [[0]] @55'.
+3 Consumed message 'Task 2 17:12:19'  '' at: 'test-topic [[1]] @72'.
+1 Consumed message 'Task 3 17:12:20'  '' at: 'test-topic [[0]] @56'.
+3 Consumed message 'Task 2 17:12:20'  '' at: 'test-topic [[1]] @73'.
+1 Consumed message 'Task 1 17:12:20'  '' at: 'test-topic [[0]] @57'.
+3 Consumed message 'Task 3 17:12:22'  '' at: 'test-topic [[1]] @74'.
+1 Consumed message 'Task 3 17:12:21'  '' at: 'test-topic [[0]] @58'.
+3 Consumed message 'Task 1 17:12:23'  '' at: 'test-topic [[1]] @75'.
+1 Consumed message 'Task 2 17:12:21'  '' at: 'test-topic [[0]] @59'.
+3 Consumed message 'Task 1 17:12:25'  '' at: 'test-topic [[1]] @76'.
+1 Consumed message 'Task 1 17:12:21'  '' at: 'test-topic [[0]] @60'.
+3 Consumed message 'Task 3 17:12:25'  '' at: 'test-topic [[1]] @77'.
+1 Consumed message 'Task 1 17:12:22'  '' at: 'test-topic [[0]] @61'.
+3 Consumed message 'Task 2 17:12:25'  '' at: 'test-topic [[1]] @78'.
+1 Consumed message 'Task 2 17:12:22'  '' at: 'test-topic [[0]] @62'.
+3 Consumed message 'Task 2 17:12:26'  '' at: 'test-topic [[1]] @79'.
+1 Consumed message 'Task 2 17:12:23'  '' at: 'test-topic [[0]] @63'.
+
+3 консьюмера присоединились к топику с 2мя партициями
+3 консьюмера в одной консьюмер группе
+Т.е. одному консюмеру не хватило партиции и он будет простаивать.
+
+
+
+
+PUB-SUB (Издатель-подписчик)***************************************************************
+
+Консьюмеры должны получать сообщения от Продюсеров
+3 Продюсера пишут в топик без указанаия номера партиции (сообщение без ключа)
+3 Консьюмера читают из топика с разной partition-group
+
+
+
+Producer:
+Такой же как в "Producer-Consumer" модели.
+
+
+OUTPUT:
+2 Producer start>>>>>>>>>>>
+3 Producer start>>>>>>>>>>>
+1 Producer start>>>>>>>>>>>
+1 Delivered 'Task 1 20:29:55' to 'test-topic [[1]] @257'
+2 Delivered 'Task 2 20:29:55' to 'test-topic [[1]] @259'
+3 Delivered 'Task 3 20:29:55' to 'test-topic [[1]] @258'
+2 Delivered 'Task 2 20:29:57' to 'test-topic [[0]] @241'
+1 Delivered 'Task 1 20:29:57' to 'test-topic [[1]] @261'
+3 Delivered 'Task 3 20:29:57' to 'test-topic [[1]] @260'
+1 Delivered 'Task 1 20:29:58' to 'test-topic [[0]] @242'
+2 Delivered 'Task 2 20:29:58' to 'test-topic [[1]] @262'
+3 Delivered 'Task 3 20:29:58' to 'test-topic [[1]] @263'
+1 Delivered 'Task 1 20:29:59' to 'test-topic [[0]] @243'
+3 Delivered 'Task 3 20:29:59' to 'test-topic [[0]] @245'
+2 Delivered 'Task 2 20:29:59' to 'test-topic [[0]] @244'
+3 Delivered 'Task 3 20:30:00' to 'test-topic [[1]] @264'
+1 Delivered 'Task 1 20:30:00' to 'test-topic [[0]] @247'
+2 Delivered 'Task 2 20:30:00' to 'test-topic [[0]] @246'
+3 Delivered 'Task 3 20:30:01' to 'test-topic [[0]] @248'
+2 Delivered 'Task 2 20:30:01' to 'test-topic [[1]] @266'
+1 Delivered 'Task 1 20:30:01' to 'test-topic [[1]] @265'
+1 Delivered 'Task 1 20:30:02' to 'test-topic [[0]] @249'
+3 Delivered 'Task 3 20:30:02' to 'test-topic [[0]] @250'
+2 Delivered 'Task 2 20:30:02' to 'test-topic [[1]] @267'
+2 Delivered 'Task 2 20:30:03' to 'test-topic [[0]] @252'
+3 Delivered 'Task 3 20:30:03' to 'test-topic [[0]] @251'
+1 Delivered 'Task 1 20:30:03' to 'test-topic [[1]] @268'
+2 Delivered 'Task 2 20:30:04' to 'test-topic [[0]] @253'
+1 Delivered 'Task 1 20:30:04' to 'test-topic [[0]] @254'
+
+
+---------------------------------------------------------------------------------------------------------
+
+
+Consumer
+Задали разные группы для 3 консьюмеров
+
+GroupId = "test-consumer-group 1",
+GroupId = "test-consumer-group 2",
+GroupId = "test-consumer-group 3",
+
+
+
+
+OUTPUT:
+3 Consumer start>>>>>>>>>>>
+2 Consumer start>>>>>>>>>>>
+1 Consumer start>>>>>>>>>>>
+2 Consumed message 'Task 1 20:29:55'  '' at: 'test-topic [[1]] @257'.
+1 Consumed message 'Task 1 20:29:55'  '' at: 'test-topic [[1]] @257'.
+3 Consumed message 'Task 1 20:29:55'  '' at: 'test-topic [[1]] @257'.
+3 Consumed message 'Task 3 20:29:55'  '' at: 'test-topic [[1]] @258'.
+1 Consumed message 'Task 3 20:29:55'  '' at: 'test-topic [[1]] @258'.
+2 Consumed message 'Task 3 20:29:55'  '' at: 'test-topic [[1]] @258'.
+1 Consumed message 'Task 2 20:29:55'  '' at: 'test-topic [[1]] @259'.
+2 Consumed message 'Task 2 20:29:55'  '' at: 'test-topic [[1]] @259'.
+3 Consumed message 'Task 2 20:29:55'  '' at: 'test-topic [[1]] @259'.
+3 Consumed message 'Task 3 20:29:57'  '' at: 'test-topic [[1]] @260'.
+1 Consumed message 'Task 3 20:29:57'  '' at: 'test-topic [[1]] @260'.
+2 Consumed message 'Task 3 20:29:57'  '' at: 'test-topic [[1]] @260'.
+1 Consumed message 'Task 1 20:29:57'  '' at: 'test-topic [[1]] @261'.
+2 Consumed message 'Task 1 20:29:57'  '' at: 'test-topic [[1]] @261'.
+3 Consumed message 'Task 1 20:29:57'  '' at: 'test-topic [[1]] @261'.
+2 Consumed message 'Task 2 20:29:57'  '' at: 'test-topic [[0]] @241'.
+3 Consumed message 'Task 2 20:29:57'  '' at: 'test-topic [[0]] @241'.
+1 Consumed message 'Task 2 20:29:57'  '' at: 'test-topic [[0]] @241'.
+3 Consumed message 'Task 1 20:29:58'  '' at: 'test-topic [[0]] @242'.
+2 Consumed message 'Task 1 20:29:58'  '' at: 'test-topic [[0]] @242'.
+1 Consumed message 'Task 1 20:29:58'  '' at: 'test-topic [[0]] @242'.
+2 Consumed message 'Task 2 20:29:58'  '' at: 'test-topic [[1]] @262'.
+3 Consumed message 'Task 2 20:29:58'  '' at: 'test-topic [[1]] @262'.
+1 Consumed message 'Task 2 20:29:58'  '' at: 'test-topic [[1]] @262'.
+3 Consumed message 'Task 3 20:29:58'  '' at: 'test-topic [[1]] @263'.
+1 Consumed message 'Task 3 20:29:58'  '' at: 'test-topic [[1]] @263'.
+2 Consumed message 'Task 3 20:29:58'  '' at: 'test-topic [[1]] @263'.
+1 Consumed message 'Task 1 20:29:59'  '' at: 'test-topic [[0]] @243'.
+2 Consumed message 'Task 1 20:29:59'  '' at: 'test-topic [[0]] @243'.
+3 Consumed message 'Task 1 20:29:59'  '' at: 'test-topic [[0]] @243'.
+3 Consumed message 'Task 2 20:29:59'  '' at: 'test-topic [[0]] @244'.
+2 Consumed message 'Task 2 20:29:59'  '' at: 'test-topic [[0]] @244'.
+1 Consumed message 'Task 2 20:29:59'  '' at: 'test-topic [[0]] @244'.
+1 Consumed message 'Task 3 20:29:59'  '' at: 'test-topic [[0]] @245'.
+2 Consumed message 'Task 3 20:29:59'  '' at: 'test-topic [[0]] @245'.
+3 Consumed message 'Task 3 20:29:59'  '' at: 'test-topic [[0]] @245'.
+3 Consumed message 'Task 2 20:30:00'  '' at: 'test-topic [[0]] @246'.
+2 Consumed message 'Task 2 20:30:00'  '' at: 'test-topic [[0]] @246'.
+1 Consumed message 'Task 2 20:30:00'  '' at: 'test-topic [[0]] @246'.
+1 Consumed message 'Task 1 20:30:00'  '' at: 'test-topic [[0]] @247'.
+3 Consumed message 'Task 1 20:30:00'  '' at: 'test-topic [[0]] @247'.
+2 Consumed message 'Task 1 20:30:00'  '' at: 'test-topic [[0]] @247'.
+2 Consumed message 'Task 3 20:30:00'  '' at: 'test-topic [[1]] @264'.
+3 Consumed message 'Task 3 20:30:00'  '' at: 'test-topic [[1]] @264'.
+1 Consumed message 'Task 3 20:30:00'  '' at: 'test-topic [[1]] @264'.
+1 Consumed message 'Task 1 20:30:01'  '' at: 'test-topic [[1]] @265'.
+2 Consumed message 'Task 1 20:30:01'  '' at: 'test-topic [[1]] @265'.
+3 Consumed message 'Task 1 20:30:01'  '' at: 'test-topic [[1]] @265'.
+3 Consumed message 'Task 2 20:30:01'  '' at: 'test-topic [[1]] @266'.
+1 Consumed message 'Task 2 20:30:01'  '' at: 'test-topic [[1]] @266'.
+2 Consumed message 'Task 2 20:30:01'  '' at: 'test-topic [[1]] @266'.
+
+
+Каждый инстанс получает сообщение, независимо от партиции.
+

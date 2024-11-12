@@ -1,0 +1,31 @@
+
+Äëÿ ListView:
+
+    <ListView Grid.Row="2"
+              Margin="1"
+              AlternationCount="{Binding Path= StkConfigOutputInfo.ErrorList.Count}"
+              ItemContainerStyle="{StaticResource OutputInfoStyle}"
+              ItemsSource="{Binding Path=StkConfigOutputInfo.ErrorList}">
+      
+      <ListView.View>
+        <GridView>
+          <GridViewColumn Header="¹" Width="30"           
+                       DisplayMemberBinding="{Binding (ItemsControl.AlternationIndex),
+        </GridView>
+      </ListView.View>
+    </ListView>
+	
+	
+Äëÿ ListBox:
+	
+<ListBox ItemsSource="{Binding Path=MyListItems}"
+         AlternationCount="{Binding Path=MyListItems.Count}"
+         ItemTemplate="{StaticResource MyItemTemplate}"
+...
+/>
+<DataTemplate x:Key="MyItemTemplate" ... >
+    <StackPanel>
+        <Label Content="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=TemplatedParent.(ItemsControl.AlternationIndex)}" />
+        ...
+    </StackPanel>
+</DataTemplate>

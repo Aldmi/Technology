@@ -1,0 +1,35 @@
+0. Устнановить OpenSSL-Win64   на C:\OpenSSL-Win64
+
+1. Перейти в папку    C:\OpenSSL-Win64\bin   
+   запустить openssl.exe от имени админа
+
+2.  Ввести команду создания сертификата и закрытого ключа
+
+    example.key - имя ключа
+    example.crt - имя сертификата
+
+    openssl req -x509 -newkey rsa:4096 -sha256 -nodes -keyout example.key -out example.crt -subj "/CN=example.com" -days 3650
+	
+3. Преобразуйте сертификат и ключ в автономный файл .pfx.
+   
+   openssl pkcs12 -export -out example.pfx -inkey example.key -in example.crt -certfile example.crt
+   
+4. Зарегистрирвать сертификат (2 раза нажать example.pfx) в
+    Текущий пользователь / Личное  
+	Текущий пользователь / доверенное 
+	
+5. Скопировать сертификат example.pfx в папку cerf в корне проекта.
+
+
+6. Загрузить его из папки cerf
+
+        private X509Certificate2 CreateX509Certificate(string pass)
+        {
+            var fileName = Path.Combine(CurrentEnvironment.ContentRootPath, "cerf\\example.pfx");
+            if (!File.Exists(fileName))
+            {
+                throw new FileNotFoundException("Signing Certificate is missing!");
+            }
+            var cert = new X509Certificate2(fileName, pass);
+            return cert;
+        }

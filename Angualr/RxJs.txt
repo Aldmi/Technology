@@ -1,0 +1,140 @@
+******************************************************************************************************
+Подписка на поток	
+------------------------------------------------------------------------------------------------------
+	this.auth.login(user).subscribe({
+        next: (response) => {
+          this.form.reset()
+          this.submitted = false
+          this.router.navigate(['/admin', 'dashboard'])
+        },
+        error: (e) => {
+          this.submitted = false
+        },
+        // complete: () => {
+        //   console.info('complete')
+        //   this.submitted = false
+        // }
+      })
+	  
+
+******************************************************************************************************
+Пример обработки потока ввода символов в элемет input.
+------------------------------------------------------------------------------------------------------
+1. filter- обрабатывает кол-во данных в потоке больше 3.
+2. debounceTime - антидребезг на ввод данных
+3. distinctUntilChanged - только уникальные данные
+4. switchMap  - (Map - преобразовывает вход в другой тип).switchMap - будет проходить только последнее сгенерированное значение и отбрасывать более ранние значения, 
+				поэтому мы уверены, что результаты, соответствующие старому входу, не будут отображены.
+				concatMap - все данные идут друг за другом.
+				Вызов catchError в pipe обрабатыввет исключения в потоке данных, без завершения потока в случае возникновения ошибки.
+				
+
+this.input.valueChanges
+  .pipe(
+	  filter(query => query.length >= 3),
+	  debounceTime(400),
+	  distinctUntilChanged(),
+	  switchMap(value => this.ponyService.search(value).pipe(catchError(error =>
+		of([]))))
+  )
+  .subscribe(ponies => (this.ponies = ponies));
+
+
+	
+******************************************************************************************************
+подписка на поток в шаблоне через async pipe.
+использовать as raceModel нужно для того чтобы была одна подписка на race стрим.
+async pipe - сам делает unsubscrube от стрима.
+------------------------------------------------------------------------------------------------------
+template: `
+	<div *ngIf="race | async as raceModel">
+		<h2>{{ raceModel.name }}</h2>
+		<small>{{ raceModel.date }}</small>
+	</div>
+`
+
+	  
+******************************************************************************************************
+Обработка элементов в шаблоне
+------------------------------------------------------------------------------------------------------
+   public error$:Subject<string> = new Subject<string>()
+
+  <div class="alert alert-danger" *ngIf="auth.error$ | async as err">
+    {{err}}
+  </div>
+  
+  
+******************************************************************************************************
+ Использование async pipe с обработкой ошибок в шаблоне
+------------------------------------------------------------------------------------------------------
+ 
+ @Component({
+  selector: 'ns-racecontainer',
+  template: `
+	  <div>
+		  <div *ngIf="error">An error occurred while fetching the race</div>
+		  <ns-race *ngIf="race | async as r" [raceModel]="r" />
+	  </div>
+  `,
+  standalone: true,
+  imports: [NgIf, AsyncPipe, RaceComponent]
+})
+export class RaceContainerComponent implements OnInit {
+  race!: Observable<RaceModel>;
+  error = false;
+  constructor(private raceService: RaceService) {}
+  ngOnInit(): void {
+  this.race = this.raceService.get().pipe(
+	  // the `catchError` operator allows to handle a potential error
+	  // it must return an observable (here an empty one).
+	  catchError(error => {
+	  this.error = true;
+	  console.error(error);
+	  return EMPTY;
+	  })
+	);
+  }
+}
+@Component({
+  selector: 'ns-race',
+  template: `
+	  <div>
+		  <h2>{{ raceModel.name }}</h2>
+		  <small>{{ raceModel.date }}</small>
+	  </div>
+  `,
+  standalone: true
+})
+export class RaceComponent {
+  @Input({ required: true }) raceModel!: RaceModel;
+}
+
+
+******************************************************************************************************
+Создание в ручную Observable.
+------------------------------------------------------------------------------------------------------
+const numbers = new Observable(observer => {
+  observer.next(1);
+  observer.next(2);
+  observer.complete();
+});
+Now we could subscribe to such an observable:
+numbers.subscribe({
+  next: number => console.log(number),
+  error: error => console.log(error),
+  complete: () => console.log('Complete!')
+});
+
+
+******************************************************************************************************
+Пример. вручную генерировать бесконечную последовательность раз в 2 сек.
+interval не будет создан до момента подписки, поэтому мы просто создали холодный наблюдаемый объект.
+return () => clearInterval(interval); - возвращаем функцию для отмены подписки, на стороне подписчика.
+------------------------------------------------------------------------------------------------------
+ get(): Observable<string> {
+  return new Observable(observer => {
+	  const interval = setInterval(() => observer.next('hello'), 2000);
+	  return () => clearInterval(interval);
+  });
+
+

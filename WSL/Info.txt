@@ -1,0 +1,26 @@
+
+WSL---------------------------------
+Ubuntu
+user: aldmi
+password: 12345
+
+
+wsl --install -d Ubuntu
+
+ip adress назначенный для Linux в WSL
+wsl hostname -I
+172.28.160.1
+
+
+
+1. У тебя должна быть включена виртуализация в процессоре
+2. В компонентах нужно включить "Подсистема Windows для Linux" и "Платформа Виртуальных Машин". Можно через консоль:
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+
+(желательно перезагрузиться)
+3. Установить обновление для ядра: https://wslstorestorage.blob.core.windows.net/wslb...
+(желательно перезагрузиться)
+4. wsl --set-default-version 2
+5. Дальше любым желаемым способом устанавливаешь нужный тебе образ.
+Взято из вот этого мануала: https://learn.microsoft.com/ru-ru/windows/wsl/inst...

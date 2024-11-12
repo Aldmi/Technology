@@ -1,0 +1,15 @@
+1.Установить .NET runtime на Linux 
+sudo apt-get install -y aspnetcore-runtime-8.0
+
+2.Установить пакет libice6 или установить zlib1g пакет
+  (WSL 2 дистрибуты так же поддержуются, но libice6, libsm6 и libfontconfig1 должны быть установлены отдельно.)
+sudo apt install libice6
+sudo apt install libsm6
+или
+sudo apt install zlib1g
+
+3. Сделать выпуск приложения publish под Linux
+
+
+4. Скопировать папку Publish в каталог для запуска приложения (/home/aldmi/AvaloniaApps)
+cp -r /mnt/d/Tmp/AvaloniaApplication2/AvaloniaApplication2/bin/Release/net8.0/linux-x64/publish /home/aldmi/AvaloniaApps/App_1

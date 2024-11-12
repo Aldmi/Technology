@@ -1,0 +1,186 @@
+
+    <Window.Resources>
+
+        <utils:ListItemIndexConverter x:Key="RowNumberConverter" />
+
+        <utils:SelectedItemConvert x:Key="SelItemConverter" />
+
+        <CollectionViewSource x:Key="MyTableList" Source="{Binding Path=MyTable}" />
+
+        <CollectionViewSource x:Key="MyGroupList" Source="{Binding ElementName=GroupTs, Path=SelectedItem.GroupList, UpdateSourceTrigger=PropertyChanged}" />
+
+    </Window.Resources>
+
+
+
+
+                <ComboBox x:Name="GroupTs"
+                          Height="Auto"
+                          MaxWidth="200"
+                          Margin="20"
+                          HorizontalAlignment="Center"
+                          ItemsSource="{Binding Source={StaticResource MyTableList}}"
+                          SelectedItem="{Binding Path=SelNumberGr, Converter= {StaticResource SelItemConverter}, ConverterParameter={StaticResource MyTableList}}"
+                          ToolTip="{Binding SelectedItem.Descript,
+                                            RelativeSource={RelativeSource Self}}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Width="Auto"
+                                           HorizontalAlignment="Left"
+                                           Padding="10,1,1,1"
+                                           Text="{Binding NumberGr}">
+                                    <TextBlock.ToolTip>
+                                        <ToolTip HorizontalAlignment="Center"
+                                                 HorizontalContentAlignment="Center"
+                                                 HasDropShadow="True"
+                                                 Placement="Bottom">
+                                            <TextBlock Foreground="DarkTurquoise" Text="{Binding Descript}" />
+                                        </ToolTip>
+                                    </TextBlock.ToolTip>
+                                </TextBlock>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+				
+				
+                <ComboBox x:Name="SignalTs"
+                          Height="Auto"
+                          MaxWidth="200"
+                          Margin="20"
+                          HorizontalAlignment="Center"
+                          ItemsSource="{Binding ElementName=GroupTs,
+                                                Path=SelectedItem.GroupList}"
+                          SelectedIndex="{Binding Path= SelIndex}"
+                          ToolTip="{Binding SelectedItem.GroupList.Key,
+                                            RelativeSource={RelativeSource Self}}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+
+                                <TextBlock Margin="5" Text="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=ComboBoxItem}, Converter={StaticResource RowNumberConverter}}" />
+
+                                <TextBlock Width="Auto"
+                                           HorizontalAlignment="Left"
+                                           Padding="10,1,1,1"
+                                           Text="{Binding Path=Value}">
+                                    <TextBlock.ToolTip>
+                                        <ToolTip HorizontalAlignment="Center"
+                                                 HorizontalContentAlignment="Center"
+                                                 HasDropShadow="True"
+                                                 Placement="Bottom">
+                                            <TextBlock Foreground="DarkTurquoise" Text="{Binding Path=Key}" />
+                                        </ToolTip>
+                                    </TextBlock.ToolTip>
+                                </TextBlock>
+                            </StackPanel>
+                        knlui</DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+				
+				
+	
+	
+     public class Table : ModelBase, IEnumerable<Group>
+     {
+          public ObservableCollection<Group> Tabl { get; set; }
+
+
+          public Table()
+          {
+               Tabl = new ObservableCollection<Group> { new Group(1, "111111", new ObservableCollection<KeyValuePair<string, bool>> { new KeyValuePair<string, bool>("1111 key1", true), new KeyValuePair<string, bool>("1111 key2", true), new KeyValuePair<string, bool>("1111 key3", false) }),
+                                             new Group(2, "22222", new ObservableCollection<KeyValuePair<string, bool>> { new KeyValuePair<string, bool>("2222 key1", true), new KeyValuePair<string, bool>("2222 key2", true), new KeyValuePair<string, bool>("2222 key3", false) }),
+                                             new Group(245, "333333", new ObservableCollection<KeyValuePair<string, bool>> { new KeyValuePair<string, bool>("3333 key1", true), new KeyValuePair<string, bool>("3333 key2", true), new KeyValuePair<string, bool>("3333 key3", false), new KeyValuePair<string, bool>("3333 key4", false) }) };
+          }
+
+
+
+
+
+
+
+
+
+          public IEnumerator<Group> GetEnumerator()
+          {
+               return Tabl.GetEnumerator();
+          }
+
+          IEnumerator IEnumerable.GetEnumerator()
+          {
+               return GetEnumerator();
+          }
+     }
+				
+				
+    public class Group : ModelBase, IComparable<Group>
+    {
+         #region Properties
+
+         public int NumberGr
+          {
+               get { return GetValue<int>(NumberGrProperty); }
+               set { SetValue(NumberGrProperty, value); }
+          }
+          public static readonly PropertyData NumberGrProperty = RegisterProperty("NumberGr", typeof(int));
+
+
+          public string Descript
+          {
+               get { return GetValue< string>(DescriptProperty); }
+               set { SetValue(DescriptProperty, value); }
+          }
+          public static readonly PropertyData DescriptProperty = RegisterProperty("Descript", typeof( string));
+
+
+
+          public ObservableCollection<KeyValuePair<string,bool>> GroupList
+          {
+               get { return GetValue<ObservableCollection<KeyValuePair<string,bool>>>(GroupListProperty); }
+               set { SetValue(GroupListProperty, value); }
+          }
+          public static readonly PropertyData GroupListProperty = RegisterProperty("GroupList", typeof(ObservableCollection<KeyValuePair<string,bool>>));
+
+
+         // public ObservableCollection<KeyValuePair<string, bool>> GroupList { get; set; }
+
+          #endregion
+
+
+
+
+
+
+          #region Constructor
+
+          public Group(int numberGr, string descr, ObservableCollection<KeyValuePair<string, bool>> grList  )
+          {
+              NumberGr = numberGr;
+              Descript = descr;
+              GroupList = grList;
+
+          }
+
+          #endregion
+
+
+
+
+
+
+
+
+         public int CompareTo(Group other)
+         {
+              if (other == null) return 1;
+
+              return NumberGr.CompareTo(other.NumberGr);
+         }
+    }	
+	
+	
+	
+				
+				
+				

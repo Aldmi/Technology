@@ -1,0 +1,57 @@
+//РЕГИСТРАЦИЯ----------------------------
+builder.RegisterType<MemEventBus>().As<IEventBus>().InstancePerDependency();
+	
+
+public class MemEventBus : IEventBus
+{
+	private readonly IBus _bus;
+	public MemEventBus()
+	{
+		_bus = BusSetup.StartWith<Conservative>().Construct();
+	}
+	
+	public void Dispose()
+	{
+		_bus?.Dispose();  
+	}
+}
+
+//ВНЕДРЕНИЕ И ИСПОЛЬЗОВАНИЕ
+ public class Device: IDisposable
+ {
+	private readonly Func<IEventBus> _eventBusFactory;
+	 
+	public Device(Func<IEventBus> eventBusFactory)
+	{
+	  _eventBusFactory = eventBusFactory;
+	}
+		
+	public void Methode()
+	{
+	   //создаем через фабрику несколько объектов
+	   var eventBus1= _eventBusFactory();
+       var eventBus2 = _eventBusFactory();
+       var eventBus3 = _eventBusFactory();
+	}
+		
+    public void Dispose()
+	{
+       
+	}
+ }
+ 
+ создаем через фабрику несколько ЛОКАЛЬНЫХ объектов, при выходе за пределы Methode() eventBus1...eventBus3 НЕ будут уничтоженны!!!
+ Scope созданных объектов (eventBus1...eventBus3) находится внути Scope класса Device.
+ Следовательно eventBus1...eventBus3 будут уничтоженны только при уничтожении Scope Device.
+ 
+ Т.е. Для контроля времени жизни созданных через фабрику объектов, нужно их создавать в обертке Owned.
+ Func<Owned<IEventBus>>.
+
+ Тогда можно локально в любом месте кода уничтожить временно созданный сервис.
+  var eventBusOwner1= _eventBusFactory();
+  var eventBus1= eventBusOwner1.Value;
+  eventBus1.Use();
+  eventBusOwner1.Dispose();
+ 
+ 
+

@@ -1,0 +1,39 @@
+
+
+Получение параметров в компоненте из 
+параметров маршрута и
+параметров запроса
+
+http://localhost:4200/item/10?product=&price=100
+
+
+const routes: Routes = [
+   { path: '', component: HomeComponent},
+   { path: 'item/:id', component: ItemComponent}
+];
+
+
+@Component({
+  selector: 'app-item',
+  templateUrl: './item.component.html',
+  styleUrls: ['./item.component.scss']
+})
+export class ItemComponent {
+  id:number = 10
+  product:string = ''
+  price:number = 0
+  private routeSubscription: Subscription;
+  private querySubscription: Subscription;
+
+  constructor(private route:ActivatedRoute) {
+    this.routeSubscription= route.params.subscribe(params=> {
+      this.id = params['id']
+      this.id = Number.parseInt(params['id'] as string)
+    });
+
+    this.querySubscription = route.queryParams.subscribe(queryParam=> {
+      this.product = queryParam['product']
+      this.price = Number.parseInt(queryParam['price'] as string)
+    })
+  }
+}

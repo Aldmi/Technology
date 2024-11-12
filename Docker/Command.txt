@@ -1,0 +1,152 @@
+1. Создать Image на базе Dockerfile
+$ docker build -t dotnetapp-dev .
+Сохранение в репозитории shykes образа с именем myapp
+$ docker build -t shykes/myapp .
+$ docker build -t shykes/myapp:1.0.2 .
+
+
+2. Создать (Create) и запустить(Start) контейнер из Image 
+docker run -d -p 5000:80 dotnetapp-dev
+   -d — переключает запущенный контейнер в бэкграунд, иначене ввод/вывод вэб сервера был бы приаттачен к нашему шеллу.
+   -p — маппит порт хостовой машины на exposed порт контейнера. Т.е все запросы пришедшие на 80 порт будут проброшены на порт 5000
+  --rm - Удаление контейнера после его остановки
+$ docker run -d -p 8080:80 --name myapp aspnetapp
+   --name myapp - можно задать имя контейнеру
+
+  docker run -it dotnetapp-dev 
+   
+   
+3. Принудительно удалить запущенный контейнер
+$ docker rm -f <container>
+
+
+4. Принудительно удалить все Docker-контейнеры, включая запущенные контейнеры:
+$ docker rm -f $(docker ps -a -q)
+
+
+5. Удалить все остановленные (неиспользуемые) Docker-контейнеры:
+$ docker container prune -f
+
+
+6. Инфа про то как создавался и запускался контейнер, также последняя актуальная инфа о работе программы в контейнере
+$ docker container logs --details CONTAINER
+
+
+7. Инфа про то как создавался образ.
+$  docker image history ImageId
+
+
+
+Примеры:
+
+1. Запуск postgres
+docker run -d -p 6666:5432 postgres
+
+
+2. Запуск web api 
+Локальный образ после команды Release в VS. http://localhost:5000/api/values
+$ docker run -d -p 5000:80 dockerefcorepostgreesql:latest
+
+образ скачан(pull) из репозитория. http://localhost:5000/api/values
+$ docker run -d -p 5000:80 aldmidocker1988/cwsrepository:testdockerefcore
+
+
+3. push образа в репозиторий
+Задание тега
+Формат:
+docker tag {ImageId} {UserRep}/{Rep}:{newTeg}
+docker tag 9b4557082627 aldmidocker1988/cwsrepository:testdockerefcore
+В результате создастся новый образ на базе образа указанного в {ImageId}, т.е. будет два связанных образа.
+
+Этот новый образ отправим в репозиторий
+docker push aldmidocker1988/cwsrepository:testdockerefcore
+
+docker tag 9b4557082627 aldmidocker1988/cwsrepository:ad-ipsend
+docker push aldmidocker1988/cwsrepository:ad-ipsend
+
+
+4. pull образа из репозитория
+docker pull aldmidocker1988/cwsrepository:testdockerefcore
+
+
+5. запуск нескольких контейнеров через docker-compose.yml
+Для запуска достаточно вызвать в директории с docker-compose.yml
+$ docker-compose up -d
+
+
+6. запуcк bash внутри контейнера
+   docker exec -it 72ca2488b353 bash
+   Стартует с root папки /app
+   
+Также узнать root папку можно запустив контейнер без бекграунда(-d), тогда при запуске приложения будет выведенно
+$ docker run -p 5555:80 -v d:/data:/app/logs dockerefcorepostgreesql:latest
+
+[09:38:53 INF] User profile is available. Using '/root/.aspnet/DataProtection-Keys' as key repository; keys will not be encrypted at rest.
+[09:38:53 INF] Creating key {3cde12cb-c987-43c3-8803-33de6ddf43f6} with creation date 2019-02-08 09:38:53Z, activation date 2019-02-08 09:38:53Z, and expiration date 2019-05-09 09:38:53Z.
+[09:38:53 WRN] No XML encryptor configured. Key {3cde12cb-c987-43c3-8803-33de6ddf43f6} may be persisted to storage in unencrypted form.
+[09:38:53 INF] Writing data to file '/root/.aspnet/DataProtection-Keys/key-3cde12cb-c987-43c3-8803-33de6ddf43f6.xml'.
+Hosting environment: Production
+Content root path: /app
+Now listening on: http://[::]:80
+Application started. Press Ctrl+C to shut down.
+  
+
+7. Проброс общих папок volume 
+/app/logs - папка в контейнере с логами (/app/logs:ro - readOnly)
+$ docker run -d -p 5555:80 -v d:/data:/app/logs dockerefcorepostgreesql:latest
+$ docker run -p 5555:80 -v d:/data:/app/logs dockerefcorepostgreesql:latest
+
+Опции в docker-compose.yaml
+    volumes:
+      - //d/data:/app/logs
+
+
+8. Информация про контейнер
+  docker container inspect 73f6db210cd6
+
+  В секции Mounts указанны приатаченнные volums
+    "Mounts": [
+            {
+                "Type": "bind",
+                "Source": "/host_mnt/d/data",
+                "Destination": "/app/logs",
+                "Mode": "",
+                "RW": true,
+                "Propagation": "rprivate"
+            }
+
+9. Вывод в консоль stdout докера (в реалтайме)
+docker logs -f <CONTAINER>
+
+Вывод N последних логов контейнера
+docker logs container --tail N
+
+Подключается к работающему контейнеру в realtime
+docker logs --follow my_container
+
+Подключается к работающему контейнеру в realtime и выводит информацию с хвоста (последние 10 записей)
+docker logs -f --tail 10 6ebe0f960d6e
+
+
+10. Остановить композер и уничтожить все разделы (volums)
+docker-compose down -v
+
+
+11. RabbitMq.
+Для начала скачать Image.
+docker pull rabbitmq
+Запуск
+docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+-it                        При подключении к контейнеру при запуске (без демона -d) используем -it интерактивных процессов (например, оболочки), для взаимодействия с оболочкой.
+--rm                       Удаление контейнера после его остановки
+--name rabbitmq            имя контейнера
+-p 5672:5672               проброс порта для сервера очереди.
+-p 15672:15672             проброс порта для Management Client.
+rabbitmq:3-management      имя образа с передачей настроек.
+--------------------------------------------------------------------------
+
+docker tag 9b4557082627 aldmidocker1988/cwsrepository:ad-ipsend
+docker push aldmidocker1988/cwsrepository:ad-ipsend
+
+
+

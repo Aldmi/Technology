@@ -1,0 +1,90 @@
+https://docs.microsoft.com/en-us/previous-versions/msp-n-p/ff963548(v=pandp.10)?redirectedfrom=MSDN
+
+1. ОБЩАЯ ИНФА
+
+Конвейер состоит из ряда этапов производителя / потребителя, каждый из которых зависит от результатов своего предшественника. 
+Параллелизм возникает, когда конвейер заполняется, и когда одновременно активны более одного компонента.
+Если все стадии конверра рабоатют быстро и конвеер не заполняется то параллелизма НЕ БУДЕТ.
+Время выполнения конвеера приблизительно равно времени выполнения самой медленной стадии. 
+
+Use case:
+Конвейеры часто полезны, когда элементы данных получены из потока событий в реальном времени,
+например значения на лентах биржевых тикеров, генерируемые пользователем события щелчка мыши и пакеты, которые поступают по сети.
+Конвейеры также используются для обработки элементов из потока данных, как это делается при сжатии и шифровании,или для обработки потоков видеокадров.
+Во всех этих случаях важно, чтобы элементы данных обрабатывались в последовательном порядке.
+Конвейеры также полезны для приложений, интенсивно использующих процессор, и для приложений, в которых стоимость ввода-вывода значительна,
+т.е. Читаем с истоника много данных и читакм не быстро, обрабатываем данные в конвеере, в конце записываем результат в источник, опять таки много писать и медленно писать.
+
+Чтобы гарантировать, что поток будет доступен для выполнения каждой задачи конвейера, вы можете использовать параметр создания задачи LongRunning планировщика задач по умолчанию . 
+
+int seed = ...
+int BufferSize = ...
+var buffer1 = new BlockingCollection<string>(BufferSize);
+var buffer2 = new BlockingCollection<string>(BufferSize);
+var buffer3 = new BlockingCollection<string>(BufferSize);
+
+var f = new TaskFactory(TaskCreationOptions.LongRunning, TaskContinuationOptions.None);
+
+var stage1 = f.StartNew(() => ReadStrings(buffer1, ...));
+var stage2 = f.StartNew(() => CorrectCase(buffer1, buffer2));
+var stage3 = f.StartNew(() => CreateSentences(buffer2, buffer3));
+var stage4 = f.StartNew(() => WriteSentences(buffer3));
+
+Task.WaitAll(stage1, stage2, stage3, stage4);
+
+
+static void ReadStrings(BlockingCollection<string> output,
+                        int seed)
+{
+  try
+  {
+    foreach (var phrase in PhraseSource(seed))
+    {
+      Stage1AdditionalWork();
+      output.Add(phrase);
+    }
+  }
+  finally
+  {
+    output.CompleteAdding();
+  }
+}
+
+void DoStage(BlockingCollection<T> input,          //как CorrectCase, CreateSentences
+             BlockingCollection<T> output)
+  try
+  {
+     foreach (var item in input.GetConsumingEnumerable())
+     {
+        var result = ...
+        output.Add(result);
+     }
+  }
+  finally
+  {
+     output.CompleteAdding();
+  }
+}
+
+static void WriteSentences(BlockingCollection<string> input)
+{
+  using (StreamWriter outfile = 
+             new StreamWriter(PathForPipelineResults))
+  {
+    // ...
+    foreach (var sentence in input.GetConsumingEnumerable())
+    {
+       var printSentence = ...
+       outfile.WriteLine(printSentence);
+    }
+  }
+}
+
+ У одного Produsser может быть много Consumer. Когда Consumer принимает элемент, другие Consumer его не увидят
+Т.е. метод GetConsumingEnumerable BlockingCollection может быть вызван более чем одним Consumer.
+Это позволяет разделить значения от Produsser между несколькими Consumer.
+Если Consumer получает значение из BlockingCollection, никакой другой Consumer не получит это значение.
+Это позволит параллелить процесс обработки данных в несколькоих потоках Consumer, если Consumer обрабатывает данные медленнее чем поставляет Produsser.
+Обработанные несколькими Consumer данные можно писать в одну (выходную) BlockingCollection, тем самым реализуя паттерн MapAndReduse.
+
+Когда имеется достаточно ядер для каждого этапа конвейера, скорость конвейера приблизительно равна скорости его самого медленного этап.

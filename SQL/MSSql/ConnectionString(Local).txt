@@ -1,0 +1,7 @@
+Строка подключения:
+Server=localhost;Database=master;Trusted_Connection=True;
+
+
+Узнать версию:
+select @@Version
+go

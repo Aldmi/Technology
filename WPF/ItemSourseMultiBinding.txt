@@ -1,0 +1,14 @@
+                    <ListView Grid.Column="2"
+                              MinHeight="700"
+                              MaxHeight="700"
+                              Margin="3,0,0,0"
+                              ItemContainerStyle="{StaticResource ListItemStyle}"
+                              SelectedItem="{Binding SelectedType}">
+                        
+                        <ListView.ItemsSource>
+                            <MultiBinding Converter="{StaticResource NodeToListConverter}" >
+                                <Binding ElementName="WorkTreeView" Path="SelectedItem"></Binding>
+                                <Binding ElementName="WorkTreeView" Path="SelectedItem.IsActive"></Binding>
+                                <Binding ></Binding>
+                            </MultiBinding>
+                        </ListView.ItemsSource>

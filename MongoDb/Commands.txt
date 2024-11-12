@@ -1,0 +1,55 @@
+1. 
+Выбрать БД с именем test. Если БД нет, то будет созданна.
+use test
+
+2. 
+показать все БД
+show dbs
+
+3. 
+Узнать какая БД выбранна
+db
+
+4. 
+Список всех коллекций выбранной бд
+show collections
+
+5. 
+Получение статистики по БД или по коллекции
+db.stats()
+db.users.stats()
+
+6. 
+Создать коллекцию fruits
+Можно не создавать коллекцию, при указании коллекции она будет созданна автоматически
+db.createCollection("fruits")
+
+7. 
+Добавление в коллекцию 
+db.users.insertOne({"name": "Tom", "age": 28, languages: ["english", "spanish"]})
+db.users.insertMany([{"name": "Bob", "age": 26, languages: ["english", "french"]}, {"name": "Alice", "age": 31, languages:["german", "english"]}])
+
+document=({"name": "Bill", "age": 32, languages: ["english", "french"]})
+db.users.insertOne(document)
+
+db.users.insertOne({"name": "Alex", "age": 28, company: {"name":"Microsoft", "country":"USA"}})
+
+8. 
+Вывод элементов коллекции
+db.users.find()
+db.users.find().pretty()
+
+9. Проекция
+все документы с именем том, выведем только свойство возраст.
+db.users.find({name: "Tom"}, {age: 1})
+все документы с именем том, выведем все свойства КРОМЕ возраст.
+db.users.find({name: "Tom"}, {age: 0})
+
+фильр пустой, выводим все документы
+db.users.find({}, {age: 1, _id: 0})
+
+запрос к вложенным объектам company.name
+db.users.find({"company.name": "Microsoft"})
+
+db.users.find().sort({name: 1}).skip(3).limit(3)
+

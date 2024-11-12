@@ -1,0 +1,251 @@
+
+IEnumerable<T> - Перечисляемая последовательность
+IObservable<T> - наблюдаемая последовательность
+
+IObserver<T>   - Наблюдатель (получает объекты из последовательности)
+IEnumerator<T> - Перечилитель
+
+***************************************************************************************************
+СОЗДАНИЕ ПОСЛЕДОВАТЕЛЬНОСТИ:
+
+1. Генерация пользовательской последовательности
+
+Observable.Create<T> - возвращает Task в котором создается последовательность IObservable<T>.
+                       Любое прерывание генерации последовательности вызывает срабатывание CancelationToken, что приводит к заверщению задачи генерации последовательности.
+        
+/// <summary>
+/// Раз в сек. возвращаем число от 2 до 6
+/// </summary>
+static IObservable<int> RandomFactoryObservable()
+{
+	return Observable.Create<int>(
+		async (obs, ct) =>
+		{
+			var rand= new Random();
+			while (!ct.IsCancellationRequested)
+			{
+				await Task.Delay(1000, ct);
+				var r = rand.Next(2,6);
+				Console.WriteLine($"GEN: {r}");
+				obs.OnNext(r);
+			}
+			Console.WriteLine("Loop terminated");
+		});
+}
+
+2. Генерация всей последолвательности сразу
+IObservable<int> xs= Observable.Range(1,10);
+
+3. Генерация по таймеру long элементов
+//генерирует последовательность 0...5 через дельту DateTimeOffset С периодичностью TimeSpan
+ IObservable<long> xs = Observable.Timer(DateTimeOffset.Now.AddSeconds(5.0), TimeSpan.FromSeconds(0.5))
+     .Where(x=>x % 2 == 0)
+     .Take(5);
+	 
+DateTimeOffset - срабатывает сразу в методе Timer, а не при каждой подписки	 
+
+
+
+***************************************************************************************************
+ПОДПИСКА:
+Во время подписки начинается выполнение генерации последовательности и при ОТПИСКИ завершается !!!!
+Т.е. только когда есть подписчики выполняется генерация последовательности.
+
+   xs.Subscribe(x => Console.WriteLine(x));
+
+
+Класс пользовательского наблюдателя
+/// <summary>
+/// класс наблюдателя (вместо функци обработки) xs.Subscribe(x => Console.WriteLine(x));
+/// </summary>
+public class Obs<T> : IObserver<T>
+{
+	public void OnCompleted()
+	{
+		Console.WriteLine("OnCompleted");
+	}
+
+	public void OnError(Exception error)
+	{
+		Console.WriteLine("OnError" + error.Message);
+	}
+
+	public void OnNext(T value)
+	{
+		Console.WriteLine(value);
+	}
+}
+
+
+
+ПРИМЕРЫ:
+
+//1.Создает последовательность сразу
+IObservable<int> xs= Observable.Range(1,10);
+xs.Subscribe(x => Console.WriteLine(x));
+
+
+
+//2.Создание ЗАДАЧИ приема симолов с клавиатуры.
+static IObservable<char> KeyStrokes()
+{
+	//Возвращает ЗАДАЧУ (Task)  по созданию наблюдаемой последовательности.
+	//токен отмены срабоает при отписки от IObservable (На стороне издателя или подписчика)OnError,OnCompleted у наблюдателя)
+	return Observable.Create<char>(
+		(obs, ct) =>
+		{
+			return Task.Run(() =>
+			{
+				while (!ct.IsCancellationRequested)
+				{
+					char c = Console.ReadKey().KeyChar;
+					obs.OnNext(c);
+				}
+			}, ct);
+		});
+}
+
+//Lazy создание последовательности с применением LINQ. TakeUntil вызывает OnCompleted() на IObserver при выполнении преддиката.
+IObservable<char> xs = KeyStrokes()
+	.Where(char.IsUpper)
+	.TakeUntil(c => c == 'q');
+
+//Подписка наблюдателя Obs и следовательно запуск генерации последовательности.
+var dis = xs.Subscribe(new Obs<char>());
+
+
+//3.
+//Lazy создание последовательности. TakeUntil вызывает OnCompleted() на IObserver при выполнении предиката.
+IObservable<int> xs = RandomFactoryObservable().TakeUntil(i =>i == 5);
+//Запуск генерации последовательности без явной подписки. аналог у IEnumerable<T> ToList(), First(), ... материализация последолвательности.
+//Ожидание задачи завершится, когда сработает OnCompleted и будет возвращен последний элемент последовательности.
+var theLastInt=await xs.LastAsync();
+
+
+//4. ОТПИСКА от наблюдения на стороне наблюдателя
+//при вызове Dispose, IObserver отписывается от наблюдения, но OnCompleted() - НЕ вызывается, CancelationToken срабатывает и прерывает генерацию последовательности.
+//У каждого наблюдателя своя копия Последовательности (НЕ верна аналогия 1 издатель, много подписчиков)
+ IObservable<char> xs = KeyStrokes()
+	 //.Where(char.IsUpper)
+	 .TakeUntil(c =>c == 'q');
+ 
+ var dis=xs.Subscribe(new Obs<char>());
+ 
+ await Task.Delay(5000);
+ dis.Dispose();
+ Console.WriteLine("ОТПИСАЛИСЬ...");
+ 
+ 
+//5. ОТПИСКА от наблюдения на стороне генератора последовательности.
+
+На наблюдателе можно вызвать метод
+ obs.OnCompleted() - завершит генерацию последовательности
+ obs.OnError(e) - завершит генерацию последовательности по ошибке.
+ 
+static IObservable<char> KeyStrokesTestFactory()
+{
+	return Observable.Create<char>(
+		async (obs, ct) =>
+		{
+			try
+			{
+				while (!ct.IsCancellationRequested)
+				{
+					await Task.Delay(5000, ct);
+					obs.OnNext('t');
+					obs.OnCompleted();
+				}
+			}
+			catch (Exception e)
+			{
+				obs.OnError(e);     
+			}
+		});
+}
+
+//вариант 2:
+//Добавить условие по Прекращению генерации, при создании LAZY последовательности.
+IObservable<int> xs = RandomFactoryObservable().TakeUntil(i =>i == 5);
+
+//когда сработает условие TakeUntil, на наблюдателе вызовется метод OnCompleted().
+//Т.е. методы наблюдателя IObserver, можно вызывать внутри задачи создаваемой методом Create или повесить условие уже на созданную LAZY последовательность. 
+
+ 
+//7. При подписке для каждого наблюдателя IObserver, выделяется собственный экземпляр задачи, создающий последовательность
+IObservable<int> xs = RandomFactoryObservable();
+var dis1=xs.Subscribe(i =>Console.WriteLine(i));  //Экзмпляр задачи 1
+var dis2=xs.Subscribe(i =>Console.WriteLine(i));  //Экзмпляр задачи 2
+
+await Task.Delay(5000);
+dis1.Dispose();
+Console.WriteLine("ОТПИСАЛИСЬ... от 1");
+
+await Task.Delay(5000);
+dis2.Dispose();
+Console.WriteLine("ОТПИСАЛИСЬ... от 2");
+
+
+//6. Разбиение на батчи. Buffer Аналог батча - копит элементы в коллекции. потом выкидывает все накопленные элементы набюлюдателю.
+   IObservable<int> xs = RandomFactoryObservable().TakeUntil(i => i == 5);
+   
+   //Вариант 1
+   IObservable<IList<int>> xsBuffered= xs.Buffer(5); //выкидывасет порциями по 5 элементов. 
+   //Вариант2
+   IObservable<IList<int>> xsBuffered= xs.Buffer(TimeSpan.FromSeconds(3)); // Копит порцию данных 3 сек.
+   
+   //Подписка
+	var disBuffered = xsBuffered.Subscribe(
+		i => Console.WriteLine(i.Count),
+		() => Console.WriteLine("onCompleted")
+	);
+	
+	
+//7. Задание Троттлинга при частой генерации элементов
+   IObservable<int> xs = RandomFactoryObservable().TakeUntil(i => i == 5); 
+   IObservable<int> xsTrottle= xs.Throttle(TimeSpan.FromSeconds(3)); //Если Элементы генерируются чаще чем раз в сек, то они не проходят на наблюдателя.
+
+  
+
+
+//------------------------
+Обработка Exception при генерации последовательности.
+
+Catch - в потоке данных может отловить исключение по типу и выдать новую последовательность, вместо битой.
+        Observable.Return($"Error {exception}" вернет последовательность из 1 элемента, поэтому сразу же сработает completed.
+Retry - в случае Exception. повторить последовательность еще раз.
+
+Т.е. не существует способа ПРОДОЛЖИТЬ последовательность в которой возникло необработанное исключение.
+     нужно обрабатывать все исключения в конвеере Rx и возвращать тип IObservable<Result<T>>.
+
+
+    Observable.Timer(DateTimeOffset.Now.AddSeconds(1), TimeSpan.FromSeconds(1))
+        .Select(l=>l.ToString())
+        .Do(s =>
+        {
+            try
+            {
+                if(s == "3")
+                    throw new ApplicationException("");
+            }
+            catch (Exception e)
+            {
+                
+            }
+        })
+        //.Retry()
+        //.Catch<string, Exception>(exception => Observable.Return($"Error {exception}"))
+
+ 
+        .Subscribe(l =>
+            {
+                Console.WriteLine($"Consume: {l}");
+            },
+            (e) =>
+            {
+                Console.WriteLine($"Terminated ERROR on Program: {e}");
+            },
+            () =>
+            {
+                Console.WriteLine("completed");
+            });
+

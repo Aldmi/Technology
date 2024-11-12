@@ -1,0 +1,9 @@
+1. Отключить отслеживание изменений    	   
+	   public Context(string connStr)
+        {
+            _connStr = connStr;
+            ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;//Отключение Tracking для всего контекста
+        }
+		
+2. Провайдер для Postgre
+ Npgsql.EntityFrameworkCore.PostgreSQL

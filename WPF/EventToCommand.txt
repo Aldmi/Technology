@@ -1,0 +1,21 @@
+    <Button Grid.Row="0" Grid.Column="1" >        
+      <i:Interaction.Triggers>
+        <i:EventTrigger  EventName="PreviewMouseLeftButtonDown">
+          <catel:EventToCommand Command="{Binding Path= MoveImageCommand}" DisableAssociatedObjectOnCannotExecute="False" PassEventArgsToCommand="True"/>
+        </i:EventTrigger >
+      </i:Interaction.Triggers>
+    </Button>
+	
+	
+	
+	private Command<MouseEventArgs> _moveImageCommand;
+    public Command<MouseEventArgs> MoveImageCommand
+    {
+       get
+        {
+           return _moveImageCommand ?? (_moveImageCommand = new Command<MouseEventArgs>((MouseEventArgs e) =>
+            {
+                      MessageBox.Show(e.OriginalSource.ToString());
+              }));
+        }
+    }

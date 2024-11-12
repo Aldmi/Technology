@@ -1,0 +1,35 @@
+1.Сохраним образ в архив.
+1.1 из удаленного репозитория
+docker save aldmidocker1988/cwsrepository:ad-ipsend > /tmp/adipsend.tar
+1.2 из локального репозитория
+docker save webapiswc:latest > /tmp/adipsend.tar       // может не работать !!!
+
+
+CWS
+docker save --output /tmp/adipsend.tar webapiswc:latest
+
+DisBackend
+docker save --output /tmp/dis_backend.tar dis_backend:latest
+
+GidUral
+docker save --output /tmp/gidUralClient.tar gidural-client-light:latest
+
+2.Через WinSCP залить на сервер созданный образ в папку /tmp/adipsend.tar на Linux.
+
+3.Загрузим в локальный репозиторий образ из залитого файла.
+docker load < /tmp/adipsend.tar
+
+sudo docker load < ./dis_backend.tar
+
+4.Присвоить тег hub.repo.csip:5000/adipsend:latest загруженному образу. 
+docker tag id_загруженного_контейнера hub.repo.csip:5000/adipsend:latest
+P.S. уже можно перезапускать контейнер через docker-compose up, если нужно выложить образ в свой удаленный репозиторий, то идем дальше.
+
+5.Выложить образ в удаленный репозиториий.
+docker push hub.repo.csip:5000/adipsend:latest
+
+6. Перезапустить контейнер со всеми зависимостями, описанными в docker-compose.yml
+docker-compose down
+docker-compose up
+
+

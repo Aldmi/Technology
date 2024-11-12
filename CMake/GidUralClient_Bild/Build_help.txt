@@ -1,0 +1,38 @@
+Compiler-----------------------------------
+g++ --version
+g++ (Debian 12.2.0-14) 12.2.0
+
+cmake---------------------------------------
+$ sudo apt update -y
+$ sudo apt install cmake -y
+$ cmake --version
+cmake version 3.25.1
+
+ninja-------------------------------------- 
+$ sudo apt-get install ninja-build
+$ ninja --version
+1.11.1
+
+pkg-config ----------------------------------
+sudo apt install pkg-config 
+aldmi@debian:~$ pkg-config --version
+1.8.1
+
+librdkafka ----------------------------------
+https://github.com/confluentinc/librdkafka
+sudo apt install librdkafka-dev
+
+//Проверка что pkg находит библиотеки kafki для линкера
+aldmi@debian:~$ pkg-config --libs rdkafka++
+-lrdkafka++ 
+
+External include (ceral)------------------
+path to Extra_Include folder
+/usr/include/c++/Extra_Include
+
+
+BUILD---------------------
+cmake -DCMAKE_BUILD_TYPE=Release -G Ninja -S /root/gid/GidUralClient -B /root/gid/GidUralClient/cmake-release
+cmake --build /root/gid/GidUralClient/cmake-release --target GidUralClient -j 14
+
+

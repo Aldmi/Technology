@@ -1,0 +1,47 @@
+1. Ставим java JDK (нужно для запуска zookeeper)
+http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
+
+2. Исправляем ошибку: «javac не является внутренней или внешней командой»
+https://windowsten.ru/javac-ne-yavlyaetsya-vnutrennej-ili-vneshnej-komandoj/
+
+cd D:\kafka_2.11-2.0.0
+
+3. Запускаем Zookeeper для Windows
+> bin\windows\zookeeper-server-start.bat config\zookeeper.properties
+[2013-04-22 15:01:37,495] INFO Reading configuration from: config/zookeeper.properties (org.apache.zookeeper.server.quorum.QuorumPeerConfig)
+...
+
+STOP
+bin\windows\zookeeper-server-stop.bat
+
+
+4. Запускем kaffka для Windows
+> bin\windows\kafka-server-start.bat config\server.properties
+[2013-04-22 15:01:47,028] INFO Verifying properties (kafka.utils.VerifiableProperties)
+[2013-04-22 15:01:47,051] INFO Property socket.send.buffer.bytes is overridden to 1048576 (kafka.utils.VerifiableProperties)
+
+STOP
+bin\windows\kafka-server-stop.bat
+
+5. Создать topic с одним Partition
+> bin\windows\kafka-topics.bat --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+
+Проверить наличие топика
+> bin\windows\kafka-topics.bat --list --zookeeper localhost:2181
+test
+
+6. produser. Отправка сообщений на брокер kaffka
+> bin\windows\kafka-console-producer.bat --broker-list localhost:9092 --topic test
+This is a message
+This is another message
+
+ЕСЛИ БУДУТ ОШИБКИ ПРИ ОТПРАВКЕ ТО ПЕРЕЗАПУСТИТЬ KAFFKA С НОВЫМИ server.properties
+Добавленно:
+advertised.listeners=PLAINTEXT://localhost:9092
+
+7. consumer. Подписка на получение сообщений с топика
+> bin\windows\kafka-console-consumer.bat --bootstrap-server localhost:9092 --topic test --from-beginning
+This is a message
+This is another message
+
+--from-beginning - Сместить offset на 0, и прочитать все из топика.

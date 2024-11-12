@@ -1,0 +1,7 @@
+Статья описания:
+https://www.meziantou.net/monitoring-a-dotnet-application-using-opentelemetry.htm
+
+
+OpenTelemetry — это набор API, SDK, инструментов и интеграций, предназначенных для создания данных телеметрии, таких как трассировки, метрики и журналы, и управления ими.
+
+настраивает сборщик для получения данных по протоколу OpenTelemetry и экспорта данных в Zipkin, Prometheus и файл.

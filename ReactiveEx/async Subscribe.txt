@@ -1,0 +1,40 @@
+Метод Subscribe принимает Action<T> и не может принять async метод, который возвращает Task.
+Метод Subscribe принимает IObserver<T> observer (наблюдатель - Consumer).
+Для этого нужно метод возвращающий Task превратить в IObserver<T> с помощью Select.
+Observable.FromAsync(async () => await EventHandler(model)) - Преобразует в асинхронное действие в наблюдаемую последовательность. Каждая подписка на результирующую последовательность запускает действие.
+
+Таким образом, в случае асинхронной операции (которая, вероятно, выполняется долго,именно поэтому она асинхронна, в первую очередь),
+вы должны вызывать ее не изнутри Subscribe метода, а «раньше»;
+Вы должны превратить ваш Task в IObservable
+
+
+ПРИМЕР 1-------------------------------------------------------------------------------------------------------------------------------------
+
+//Rx Produsser
+public ISubject<CycleBehaviorStateRxModel> CycleBehaviorStateChangeRx { get; } = new Subject<CycleBehaviorStateRxModel>();
+
+//Rx Subscribe
+CycleBehaviorStateChangeRx.Select(model => Observable.FromAsync(async () => await EventHandler(model))).Concat().Subscribe();
+
+//Rx Consumer (EventHandler)
+private async Task EventHandler(CycleBehaviorStateRxModel dataState)
+{
+	await Send2ProduderUnion(Option.Name, message);
+}
+
+
+Случаи если Consumer медленнее чем Produsser.
+Concat()- гарантирует что EventHandler НЕ выполняется ПАРАЛЕЛЬНО, пока не закончил Отработку предыдущий вызов слкдующий не запустится.
+Merge()- гарантирует что EventHandler выполняется ПАРАЛЕЛЬНО для всех экземпляров.
+
+
+ПРИМЕР 2-------------------------------------------------------------------------------------------------------------------------------------
+
+//Использование с EventHandler возвращающий Task<T>. T можно использовать как резульат выполнения в Subscribe.
+produsser.RxEvent.Select(i => Observable.FromAsync(async () => await ReturnSomethingAsync(i))).Concat().Subscribe(res => Console.WriteLine(res));
+
+private static async Task<string> ReturnSomethingAsync(int number)
+{    
+	await Task.Delay(TimeSpan.FromSeconds(3));
+	return $"Result: {number*100}";
+}

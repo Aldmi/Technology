@@ -1,0 +1,18 @@
+1. Запустить консоль от админа и ввести
+	cd C:\kafka_2.11-1.0.0
+	cd C:\kafka-1.0.0
+	
+	bin\windows\zookeeper-server-start.bat config\zookeeper.properties
+
+	запустится zookeeper сервер.
+	если все хорошо то процесс не прекратился после старта.
+
+
+2. Запустить ВТОРУЮ консоль от админа и ввести
+	cd C:\kafka_2.11-1.0.0
+	cd C:\kafka-1.0.0
+	
+	bin\windows\kafka-server-start.bat config\server.properties
+	
+	запустится kafka-server сервер.
+	если все хорошо то процесс не прекратился после старта.

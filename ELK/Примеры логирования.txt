@@ -1,0 +1,17 @@
+
+
+_logger.Warning("{Type} {MessageShort}", "SendDataXmlMultipart4Devices", "DataAction Error Parse");
+
+
+_logger.Warning("{Type} {KeyExchange} ", "ТАЙМАУТ ОТВЕТА.", KeyExchange);
+
+
+ _logger.Error("{Type} {KeyExchange}  KeyTransport: \"{KeyTransport}\" ", "ТРАНСПОРТ УЖЕ НАХОДИТСЯ В ЦИКЛЕ ПЕРЕОТКРЫТИЯ", KeyExchange, _transport.KeyTransport);
+ 
+ 
+ _logger.Error("{Type} {KeyExchange}  {MessageShort}", "Ошибка извлечения данных из ЦИКЛ. очереди", KeyExchange, errorResult.ToString());
+ 
+ 
+ _logger.Error(ex, "{Type} {MessageShort}", "Ошибка в InputDataController", "StartListener");
+ 
+    _logger.Error(ex ,"{Type}", "Ошибка в InputDataController");

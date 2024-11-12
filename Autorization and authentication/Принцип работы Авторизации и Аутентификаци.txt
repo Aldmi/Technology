@@ -1,0 +1,50 @@
+
+public void ConfigureServices(IServiceCollection services)
+{
+    // добавление ApplicationDbContext для взаимодействия с базой данных учетных записей
+    services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+ 
+    // добавление сервисов Idenity
+    services.AddIdentity<ApplicationUser, IdentityRole>()  // добавление системы "пользователь - роль"
+        .AddEntityFrameworkStores<ApplicationDbContext>()  // хранилише пользователей
+        .AddDefaultTokenProviders();
+ 
+    //........................
+}
+
+public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+{
+    //..........................
+ 
+    app.UseIdentity();  //добавление в конвеер обработки проверки авторизации
+     
+    //.................................
+}
+
+
+ApplicationDbContext - Контекст БД. унаслелован от IdentityDbContext<ApplicationUser> (хранит таблицы пользователей, ролей, клэймов, ...)
+ApplicationUser - Пользователь. унаслелован от IdentityUser (содержит данные пользователя)
+IdentityRole - Роль. (хранит информацию о ролях)
+
+Можно напрямую работать с ApplicationUser и IdentityRole через контекст ApplicationDbContext, напрямую обращаясь к таблицам БД.
+
+Но нужно рабоатть через менеджеры.
+ UserManager<ApplicationUser> - работа с пользователями
+ RoleManager<IdentityRole> - работа с ролями.
+ 
+ Пример:
+ работа с пользователями
+ 
+ public class AdminController : Controller
+    {
+        UserManager<ApplicationUser> _userManager;
+        public AdminController(UserManager<ApplicationUser> manager)
+        {
+            _userManager = manager;
+        }
+        public IActionResult Index()
+        {
+            return View(_userManager.Users.ToList());
+        }
+    }

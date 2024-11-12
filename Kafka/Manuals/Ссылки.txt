@@ -1,0 +1,10 @@
+1. Install Kaffka video manual
+   https://www.youtube.com/watch?v=7F9tBwTUSeY
+
+2. клиент для .NET by Confluent (обертка на Сишной либой  "librdkafka")
+   https://github.com/ah-/rdkafka-dotnet
+   
+3. Quickstart
+   https://kafka.apache.org/quickstart
+   
+   

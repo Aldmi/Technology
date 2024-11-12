@@ -1,0 +1,53 @@
+            //https://autofac.readthedocs.io/en/latest/faq/select-by-context.html
+
+//вариант 1 (перепроектируйте свои интерфейсы)
+            чтобы не было неопределенности. выделить более частные интерфейсы
+            IUiWriter : ITextWriter
+            IConsoleWriter : ITextWriter
+			PrintTimeCommand.ctor(IUiWriter writer)
+			HelpCommand.ctor(IConsoleWriter writer)
+			
+            builder.RegisterType<UiWriter>().As<IUiWriter>().InstancePerDependency().AsSelf();
+            builder.RegisterType<ConsoleWriter>().As<IConsoleWriter>().InstancePerDependency().AsSelf();
+
+
+//вариант 2 (явная регистрация)
+            builder.RegisterType<UiWriter>().As<ITextWriter>().InstancePerDependency().AsSelf();
+            builder.RegisterType<ConsoleWriter>().As<ITextWriter>().InstancePerDependency().AsSelf();
+            builder.Register<PrintTimeCommand>(ctx => new PrintTimeCommand(ctx.Resolve<UiWriter>())).InstancePerDependency();
+            builder.Register<HelpCommand>(ctx => new HelpCommand(ctx.Resolve<ConsoleWriter>())).InstancePerDependency();
+
+
+//вариант 3 (явная регистрация, с ручным указанием параметров конструктора через ParameterType)
+            builder.RegisterType<UiWriter>().As<ITextWriter>().InstancePerDependency().AsSelf();
+            builder.RegisterType<ConsoleWriter>().As<ITextWriter>().InstancePerDependency().AsSelf();
+            builder.RegisterType<PrintTimeCommand>()
+                .WithParameter(
+                    new ResolvedParameter(
+                        (pi, ctx) => pi.ParameterType == typeof(ITextWriter),
+                        (pi, ctx) => ctx.Resolve<UiWriter>()));
+            builder.RegisterType<HelpCommand>()
+                .WithParameter(
+                    new ResolvedParameter(
+                        (pi, ctx) => pi.ParameterType == typeof(ITextWriter),
+                        (pi, ctx) => ctx.Resolve<ConsoleWriter>()));
+
+
+//вариант 4(использовать метаданные) (НЕ работало!!!)
+            builder.RegisterType<UiWriter>().As<ITextWriter>().WithMetadata("TextWriter", "UiWriter").AsSelf();
+            builder.RegisterType<ConsoleWriter>().As<ITextWriter>().WithMetadata("TextWriter", "ConsoleWriter").AsSelf();
+
+
+            builder.RegisterType<PrintTimeCommand>()
+               .WithParameter(
+                   new ResolvedParameter(
+                       (pi, ctx) => pi.ParameterType == typeof(ITextWriter),
+                       (pi, ctx) => ctx.Resolve<IEnumerable<Meta<ITextWriter>>>()
+                           .First(a => a.Metadata["TextWriter"].Equals("UiWriter"))));
+
+            builder.RegisterType<HelpCommand>()
+               .WithParameter(
+                   new ResolvedParameter(
+                       (pi, ctx) => pi.ParameterType == typeof(ITextWriter),
+                       (pi, ctx) => ctx.Resolve<IEnumerable<Meta<ITextWriter>>>()
+                           .First(a => a.Metadata["TextWriter"].Equals("ConsoleWriter"))));

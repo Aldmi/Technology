@@ -1,0 +1,140 @@
+Такой способ также называют производитель-потребитель (producer-consumer).
+Один поток производит данные - другой(ие) их потребляет.
+		
+
+//1. Базовое использование BlockingCollection	
+static void Main(string[] args)
+{
+	//Если один из потоков работает намного быстрее других и забивает память, то можно ограничить ёмкость его коллекции:
+	//Таким образом, заполнив коллекцию до указанного значения, он будет ждать, пока другие потоки не выберут данные.
+	var inputValues = new BlockingCollection<double>(boundedCapacity: 50); //Ограничить 
+	
+	//Produsser
+	var getValues = Task.Run(async () =>
+	{
+		try
+		{
+			var rnd = new Random();
+			for (int i = 0; i < 10; i++)
+			{
+				inputValues.Add(rnd.NextDouble());
+				await Task.Delay(1000);
+			}
+		}
+		finally { inputValues.CompleteAdding(); }   //Двойной вызов CompleteAdding вызовет Exception и мгновенное заверешние задач Produsser и Consumer
+	});
+	
+	//Consumer
+	var processValues = Task.Run(() =>
+	{
+		//Обработку данных внутри каждой стадии конвейера можно дополнительно распараллелить, если это необходимо:  inputValues.GetConsumingEnumerable.AsParallel()
+		foreach (var value in inputValues.GetConsumingEnumerable())
+		{
+			ProcessValue(value);
+		}
+		//CompleteAdding на Produsser вызовет выход из цикла ожидания данных и завершит Task Consumer.
+	});
+	
+
+	try
+	{
+		Task.WaitAll(getValues, processValues);
+	}
+	catch (Exception e)
+	{
+		Console.WriteLine(e);
+	}
+}
+
+static void ProcessValue(double value)
+{
+	var result = value * 100;
+	// if (result > 50)
+	//     //В случае Exception в Consumer, Task для него завершится, но Task Produsser будет генерировать данные и по завершению Task.WaitAll вылетит Exception возникший в Consumer
+	//     throw new Exception("Ошибка в обработке данных");   
+	
+	Console.WriteLine(result);
+}
+//------------------------------------------------------------------------------------------
+//2. Создание конвеера обработки
+
+var inputValues = new BlockingCollection<string>();
+var processedValues = new BlockingCollection<string>();
+
+//1. поток Читает XML.
+var readXml = Task.Run(() =>
+{
+    try
+    {
+        using (var xmlReader = XmlReader.Create("test.xml"))
+        {
+            while (xmlReader.ReadToFollowing("nodeName"))
+                inputValues.Add(xmlReader.ReadElementContentAsString());
+        }
+    }
+    finally { inputValues.CompleteAdding(); }
+});
+
+//2. поток обрабатывает данные.
+var processValues = Task.Run(() =>
+{
+    try
+    {
+        foreach (var value in inputValues.GetConsumingEnumerable())
+        {
+            // обрабатываем value
+            var newValue = Process(value);
+            processedValues.Add(newValue);
+        }
+    }
+    finally { processedValues.CompleteAdding(); }
+});
+
+//3. Поток записывает результат обработки в бд
+var writeToDB = Task.Run(() =>
+{
+    foreach (var value in processedValues.GetConsumingEnumerable())
+    {
+        // записываем данные в БД
+    }
+});
+
+Task.WaitAll(readXml, processValues, writeToDB);
+
+
+//------------------------------------------------------------------------------------------
+//3. Паралелльная обработка данных в Consumer
+
+	//Produsser выдает данные очень быстро (раз в 100мс)
+	var getValues = Task.Run(async () =>
+	{
+		try
+		{
+			var rnd = new Random();
+			for (int i = 0; i < 10; i++)
+			{
+				var val = rnd.NextDouble();
+				Console.WriteLine($"Produse {val}");
+				inputValues.Add(val);
+				await Task.Delay(100);
+			}
+		}
+		finally { inputValues.CompleteAdding(); }
+	});
+	
+	//Consumer долго обрабатывает каждую единицу данных.
+	//Поэтому обработку можно распараллелить .AsParallel()
+	var processValues = Task.Run(() =>
+	{
+		inputValues.GetConsumingEnumerable()
+                   .AsParallel()
+                   .ForAll(ProcessValue);
+	});
+	
+	//Долгая обработка каждого элемента
+	static void ProcessValue(double value)
+	{
+		Thread.Sleep(3000);
+		var result = value * 100;
+		Console.WriteLine($"END {value}");
+	}

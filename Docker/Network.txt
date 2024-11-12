@@ -1,0 +1,5 @@
+Для доступа из контейнера в сеть хоста, нужно задавать в контейнере адресс
+host.docker.internal
+
+Например строка подключения к бд.
+User ID = postgres; Password = dmitr; Server = host.docker.internal; Port = 5432; Database = DockerCommands; Integrated Security = true; Pooling = true;

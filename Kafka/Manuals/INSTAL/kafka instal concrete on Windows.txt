@@ -1,0 +1,104 @@
+Zookeeper START.
+E:\kafka_2.11-2.0.0\bin\windows\zookeeper-server-start.bat E:\kafka_2.11-2.0.0\config\zookeeper.properties
+
+Kafka START.
+E:\kafka_2.11-2.0.0\bin\windows\kafka-server-start.bat E:\kafka_2.11-2.0.0\config\server.properties
+
+Create topic with one partition
+E:\kafka_2.11-2.0.0\bin\windows\kafka-topics.bat --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+
+Check existing topic.
+E:\kafka_2.11-2.0.0\bin\windows\kafka-topics.bat --list --zookeeper localhost:2181
+
+Produser.
+E:\kafka_2.11-2.0.0\bin\windows\kafka-console-producer.bat --broker-list localhost:9092 --topic test
+
+Consumer.
+E:\kafka_2.11-2.0.0\bin\windows\kafka-console-consumer.bat --bootstrap-server localhost:9092 --topic test --from-beginning
+
+
+
+
+//------------------------------------------------------
+C
+Zookeeper START.
+C:\kafka_2.11-2.0.0\bin\windows\zookeeper-server-start.bat C:\kafka_2.11-2.0.0\config\zookeeper.properties
+
+Kafka START.
+C:\kafka_2.11-2.0.0\bin\windows\kafka-server-start.bat C:\kafka_2.11-2.0.0\config\server.properties
+
+Create topic with one partition
+C:\kafka_2.11-2.0.0\bin\windows\kafka-topics.bat --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+
+Check existing topic.
+C:\kafka_2.11-2.0.0\bin\windows\kafka-topics.bat --list --zookeeper localhost:2181
+
+Produser.
+C:\kafka_2.11-2.0.0\bin\windows\kafka-console-producer.bat --broker-list localhost:9092 --topic test
+
+Consumer.
+C:\kafka_2.11-2.0.0\bin\windows\kafka-console-consumer.bat --bootstrap-server localhost:9092 --topic test --from-beginning
+
+
+//------------------------------------------------------
+
+D
+Zookeeper START.
+D:\kafka_2.11-2.0.0\bin\windows\zookeeper-server-start.bat D:\kafka_2.11-2.0.0\config\zookeeper.properties
+
+Kafka START.
+D:\kafka_2.11-2.0.0\bin\windows\kafka-server-start.bat D:\kafka_2.11-2.0.0\config\server.properties
+
+Create topic with one partition
+D:\kafka_2.11-2.0.0\bin\windows\kafka-topics.bat --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+
+Check existing topic.
+D:\kafka_2.11-2.0.0\bin\windows\kafka-topics.bat --list --zookeeper localhost:2181
+
+Produser.
+D:\kafka_2.11-2.0.0\bin\windows\kafka-console-producer.bat --broker-list localhost:9092 --topic test
+
+Consumer.
+D:\kafka_2.11-2.0.0\bin\windows\kafka-console-consumer.bat --bootstrap-server localhost:9092 --topic test --from-beginning
+
+Kafka START.
+D:\kafka_2.11-2.0.0\bin\windows\kafka-server-start.bat C:\kafka_2.11-2.0.0\config\server.properties
+
+Create topic with one partition
+D:\kafka_2.11-2.0.0\bin\windows\kafka-topics.bat --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+
+Check existing topic.
+D:\kafka_2.11-2.0.0\bin\windows\kafka-topics.bat --list --zookeeper localhost:2181
+
+Produser.
+D:\kafka_2.11-2.0.0\bin\windows\kafka-console-producer.bat --broker-list localhost:9092 --topic test
+
+Consumer.
+D:\kafka_2.11-2.0.0\bin\windows\kafka-console-consumer.bat --bootstrap-server localhost:9092 --topic test --from-beginning
+
+D:\kafka_2.11-2.0.0\bin\windows\kafka-console-consumer.bat --bootstrap-server localhost:9092 --topic CommunicationWebService_InputData --from-beginning
+
+//-----------------------------------------------------------
+
+//------------------------------------------------------
+C
+
+cd C:\kafka_2.11-2.0.0
+
+Zookeeper START.
+bin\windows\zookeeper-server-start.bat C:\kafka_2.11-2.0.0\config\zookeeper.properties
+
+Kafka START.
+bin\windows\kafka-server-start.bat C:\kafka_2.11-2.0.0\config\server.properties
+
+Create topic with one partition
+bin\windows\kafka-topics.bat --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+
+Check existing topic.
+bin\windows\kafka-topics.bat --list --zookeeper localhost:2181
+
+Produser.
+bin\windows\kafka-console-producer.bat --broker-list localhost:9092 --topic test
+
+Consumer.
+bin\windows\kafka-console-consumer.bat --bootstrap-server localhost:9092 --topic test --from-beginning

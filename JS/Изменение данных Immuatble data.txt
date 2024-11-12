@@ -1,0 +1,7 @@
+1.Изменение данных без мутации
+	var player = {score: 1, name: 'Jeff'};
+	var newPlayer = Object.assign({}, player, {score: 2});// Теперь player неизменяемый, а newPlayer - {score: 2, name: 'Jeff'}
+    var newPlayer = {...player, score: 2};// Или, если вы используете оператор spread для объекта, можете написать:
+	
+	для массивов:
+	const squares = squares.slice(); //копирование массива squares
