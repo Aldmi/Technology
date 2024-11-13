@@ -1,0 +1,21 @@
+
+-- Получить текущую дату и время.
+select
+    now(),
+    current_timestamp,
+    current_time,
+    localtime,
+    current_date,
+
+    -- Обрезка минут и секунд
+    date_trunc('hour', current_timestamp),
+    date_trunc('hour', current_timestamp) + interval '1 hour',
+
+    date_trunc('year', current_timestamp)
+;
+
+
+
+-- выделить часть ГОД из даты
+select date_part('year', order_date)
+from orders;

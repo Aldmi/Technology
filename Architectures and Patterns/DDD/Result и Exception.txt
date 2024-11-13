@@ -1,0 +1,72 @@
+
+Nuget: CSharpFunctionalExtensions
+Тип Result<T> - возвращаемое значение из функции 
+namespace CSharpFunctionalExtensions
+{
+    public struct Result<TValue, TError> : IResult, ISerializable
+    {
+        public bool IsFailure { get; }
+        public bool IsSuccess { get; }
+        public TError Error { get; }
+        public TValue Value { get; }
+
+        public void Deconstruct(out bool isSuccess, out bool isFailure);
+        public void Deconstruct(out bool isSuccess, out bool isFailure, out TValue value);
+        public void Deconstruct(out bool isSuccess, out bool isFailure, out TValue value, out TError error);
+
+        public static implicit operator Result(Result<TValue, TError> result);
+        public static implicit operator Result<TValue>(Result<TValue, TError> result);
+    }
+}
+
+
+
+Пример использования
+
+/// <summary>
+/// Извлечь элемент из головы очереди.
+/// Если очередь пуста - вернуть Fail
+/// Если возникнут concurrent ошибки при извлечении - вернуть Fail
+/// </summary>
+/// <returns></returns>
+public Result<T, DequeueResultErrorWrapper> Dequeue()
+{
+	if (IsEmpty)
+	{
+		return Result.Fail<T, DequeueResultErrorWrapper>(new DequeueResultErrorWrapper(DequeueResultError.Empty));
+	}
+	T res;
+	if (IsOneItem)
+	{
+		if (_extractLastItem)
+		{
+			return _queue.TryDequeue(out res) ?
+				Result.Ok<T, DequeueResultErrorWrapper>(res) :
+				Result.Fail<T, DequeueResultErrorWrapper>(new DequeueResultErrorWrapper(DequeueResultError.FailTryDequeue));
+		}
+		return _queue.TryPeek(out res) ?
+			Result.Ok<T, DequeueResultErrorWrapper>(res) :
+			Result.Fail<T, DequeueResultErrorWrapper>(new DequeueResultErrorWrapper(DequeueResultError.FailTryPeek));
+	}
+	return _queue.TryDequeue(out res) 
+		? Result.Ok<T, DequeueResultErrorWrapper>(res) 
+		: Result.Fail<T, DequeueResultErrorWrapper>(new DequeueResultErrorWrapper(DequeueResultError.FailTryDequeue));
+}
+
+public class DequeueResultErrorWrapper
+{
+	public readonly DequeueResultError DequeueResultError;
+
+	public DequeueResultErrorWrapper(DequeueResultError dequeueResultError)
+	{
+		DequeueResultError = dequeueResultError;
+	}
+}
+
+
+public enum DequeueResultError
+{
+	Empty,
+	FailTryPeek,
+	FailTryDequeue
+}

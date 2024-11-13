@@ -1,0 +1,3 @@
+"C:/Program Files/PostgreSQL/12/bin/pg_restore.exe" --dbname=dvdrental --format=t --username=postgres --host=localhost --port=5432 "D:\Sql\Postgress\Тестовые БД\Пример sp.postgresqltutorial.com\dvdrental"
+
+Если использовать DataGrip, то для Restore нужно укаpать путь к pg_restore.exe

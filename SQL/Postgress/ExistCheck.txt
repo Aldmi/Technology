@@ -1,0 +1,20 @@
+Проверка наличия таблицы Settings.
+
+******************************************************************
+Postgrees:
+SELECT  to_regclass('Settings');
+
+или
+
+SELECT EXISTS
+(
+	SELECT 1
+	FROM pg_tables
+	WHERE tablename = 'Settings'
+);
+
+*****************************************************************
+MsSql:
+IF (OBJECT_ID('dbo.Settings', 'table') IS NULL)
+                SELECT 0
+                ELSE SELECT 1"
