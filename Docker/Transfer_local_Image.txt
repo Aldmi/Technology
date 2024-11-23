@@ -8,6 +8,9 @@ docker save webapiswc:latest > /tmp/adipsend.tar       // может не раб
 CWS
 docker save --output /tmp/adipsend.tar webapiswc:latest
 
+CWS-front
+docker save --output /tmp/adipsend-front.tar cws-front:latest
+
 DisBackend
 docker save --output /tmp/dis_backend.tar dis_backend:latest
 
